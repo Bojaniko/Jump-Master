@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a88e42a4b14a274d8df4e281e55a447, type: 3}
+  m_Name: Obstacle Controller Data
+  m_EditorClassIdentifier: 
+  WaveInterval: 5
+  FirstWaveInterval: 2
+  BossWaveCount: 3
+  SpawnCheckInterval: 500
+  MaxObstaclesAtOnce: 10
+  TopSpawnMarginPercentage: 10
+  DefaultControllersData: {fileID: 11400000, guid: a732b85522140d249b963ed3f80f4dc9, type: 2}
+  NormalWaveData:
+  - {fileID: 11400000, guid: f2922fa7a8ef53b49baef9af1bdb5d36, type: 2}
+  - {fileID: 11400000, guid: dafd0fbd7688e8040af89fc77be3b7b9, type: 2}
+  BossWaveData: []

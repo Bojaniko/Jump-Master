@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eec40d3f437ef78448ad26fd8edd08b6, type: 3}
+  m_Name: Falling Bomb Spawn Metrics
+  m_EditorClassIdentifier: 
+  SpawnAmount: 2
+  MaxActiveObstacles: 3
+  Data: {fileID: 11400000, guid: 76ea0619514ecf74e95cb7658bbe5403, type: 2}
+  SpawnData:
+  - {fileID: 11400000, guid: b5ffa807753ccfa4c872b8161f88c883, type: 2}
+  SpawnChance: 40
+  Interval: 5
+  SpawnPoints: 8
+  ScreenOverlapLimit: 50
+  SpawnOffset: 0.5
