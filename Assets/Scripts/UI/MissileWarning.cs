@@ -30,7 +30,7 @@ namespace JumpMaster.UI
 
     public delegate void MissileWarningEventHandler();
 
-    public class MissileWarning : InstantiablePausable
+    public class MissileWarning : InitializablePausable
     {
         public event MissileWarningEventHandler OnWarningEnded;
 

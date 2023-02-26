@@ -4,7 +4,7 @@ using JumpMaster.Structure;
 
 namespace JumpMaster.LevelControllers
 {
-    public abstract class LevelControllerBase : InstantiablePausable
+    public abstract class LevelControllerBase : InitializablePausable
     {
         protected abstract override void Initialize();
         protected abstract override void Pause();

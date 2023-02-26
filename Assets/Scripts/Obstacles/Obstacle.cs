@@ -9,7 +9,7 @@ using JumpMaster.LevelControllers.Obstacles;
 namespace JumpMaster.Obstacles
 {
     [RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(SphereCollider))]
-    public abstract class Obstacle : InstantiablePausable
+    public abstract class Obstacle : InitializablePausable
     {
         protected ObstacleSO _data;
         protected ObstacleController _controller;

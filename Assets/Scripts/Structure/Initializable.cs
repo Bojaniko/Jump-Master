@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace JumpMaster.Structure
 {
-    public abstract class Instantiable : MonoBehaviour
+    public abstract class Initializable : MonoBehaviour
     {
         protected abstract void Initialize();
 

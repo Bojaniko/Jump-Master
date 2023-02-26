@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace JumpMaster.Structure
 {
-    public abstract class InstantiablePausable : MonoBehaviour
+    public abstract class InitializablePausable : MonoBehaviour
     {
         protected abstract void Initialize();
         protected abstract void Pause();
