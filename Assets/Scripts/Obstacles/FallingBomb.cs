@@ -170,6 +170,26 @@ namespace JumpMaster.Obstacles
             _spawnController.OnDespawn += Despawn;
         }
 
+        protected override void Pause()
+        {
+
+        }
+
+        protected override void Unpause()
+        {
+
+        }
+
+        protected override void PlayerDeath()
+        {
+
+        }
+
+        protected override void Restart()
+        {
+
+        }
+
         protected override void OnUpdate()
         {
             if (_explodeCoroutine == null)

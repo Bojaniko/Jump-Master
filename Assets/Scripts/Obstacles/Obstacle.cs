@@ -2,13 +2,14 @@ using UnityEngine;
 
 using Studio28.SFX;
 
+using JumpMaster.Structure;
 using JumpMaster.LevelControllers;
 using JumpMaster.LevelControllers.Obstacles;
 
 namespace JumpMaster.Obstacles
 {
     [RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(SphereCollider))]
-    public abstract class Obstacle : MonoBehaviour
+    public abstract class Obstacle : InstantiablePausable
     {
         protected ObstacleSO _data;
         protected ObstacleController _controller;
@@ -26,9 +27,6 @@ namespace JumpMaster.Obstacles
 
         protected SphereCollider _sphereCol { get; private set; }
 
-        private bool _initialized = false;
-        public bool Initialized { get { return _initialized; } }
-
         public delegate void InitializationEventHandler();
         public event InitializationEventHandler OnInitialized;
 
@@ -37,7 +35,7 @@ namespace JumpMaster.Obstacles
 
         public void Generate(ObstacleSO data, ObstacleController controller)
         {
-            if (_initialized)
+            if (Initialized)
                 return;
 
             _data = data;
@@ -47,7 +45,7 @@ namespace JumpMaster.Obstacles
 
             Initialize();
 
-            _initialized = true;
+            Initialized = true;
 
             if (OnInitialized != null)
                 OnInitialized();
@@ -57,7 +55,7 @@ namespace JumpMaster.Obstacles
 
         private void Awake()
         {
-            if (!_initialized)
+            if (!Initialized)
                 gameObject.SetActive(false);
         }
 
@@ -111,9 +109,11 @@ namespace JumpMaster.Obstacles
                 newBounds.GetComponent<BoxCollider>().isTrigger = true;
                 _bounds = newBounds.GetComponent<BoxCollider>();
             }
+
+            LevelController.Instance.OnLevelPaused += Pause;
+            LevelController.Instance.OnLevelStarted += Unpause;
         }
 
-        protected abstract void Initialize();
         protected abstract void OnUpdate();
         protected abstract void Spawn();
         protected abstract void Despawn<ObstacleType, SpawnScriptableObject, SpawnArguments>(ISpawnable<ObstacleType, SpawnScriptableObject, SpawnArguments> spawn)
@@ -121,6 +121,12 @@ namespace JumpMaster.Obstacles
             where SpawnArguments : SpawnArgs
             where ObstacleType : Obstacle;
         protected abstract bool IsDespawnable();
+
+        protected abstract override void Initialize();
+        protected abstract override void Pause();
+        protected abstract override void Unpause();
+        protected abstract override void PlayerDeath();
+        protected abstract override void Restart();
 
         public bool BoundsUnderScreen
         {

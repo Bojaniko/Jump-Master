@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace JumpMaster.Obstacles
 {
     public class ObstacleSpawnController<ObstacleType, SpawnScriptableObject, SpawnArguments, SpawnType>

@@ -68,6 +68,27 @@ namespace JumpMaster.Obstacles
             _spawnController.OnDespawn += Despawn;
         }
 
+        protected override void Pause()
+        {
+            _rigidbody.velocity = Vector3.zero;
+            _animator.SetFloat("SwirlMult", 0f);
+        }
+
+        protected override void Unpause()
+        {
+            
+        }
+
+        protected override void PlayerDeath()
+        {
+            
+        }
+
+        protected override void Restart()
+        {
+            _spawnController.Despawn();
+        }
+
         protected override void OnUpdate()
         {
             
@@ -182,7 +203,7 @@ namespace JumpMaster.Obstacles
 
             gameObject.SetActive(true);
 
-            Debug.Log("Missile warning ended");
+            //Debug.Log("Missile warning ended");
         }
 
         private IEnumerator Explode()
@@ -205,6 +226,9 @@ namespace JumpMaster.Obstacles
 
         void FixedUpdate()
         {
+            if (LevelController.Paused)
+                return;
+
             if (_explodeCoroutine == null)
                 _rigidbody.velocity = _direction * _spawnController.SpawnData.Speed;
         }

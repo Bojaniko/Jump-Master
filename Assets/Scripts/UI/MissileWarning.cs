@@ -3,8 +3,10 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+using JumpMaster.Structure;
 using JumpMaster.Obstacles;
 using JumpMaster.UI.Data;
+using JumpMaster.LevelControllers;
 
 namespace JumpMaster.UI
 {
@@ -28,7 +30,7 @@ namespace JumpMaster.UI
 
     public delegate void MissileWarningEventHandler();
 
-    public class MissileWarning : MonoBehaviour
+    public class MissileWarning : InstantiablePausable
     {
         public event MissileWarningEventHandler OnWarningEnded;
 
@@ -43,6 +45,7 @@ namespace JumpMaster.UI
         private RectTransform _rect;
 
         private bool _ended = false;
+        private float _countdownStartTime = 0f;
 
         private void Start()
         {
@@ -53,6 +56,9 @@ namespace JumpMaster.UI
             }
         }
 
+        private static MissileWarningSO s_info;
+        private static MissileWarningData s_data;
+
         public static MissileWarning Generate(MissileWarningSO info, MissileWarningData data)
         {
             GameObject game_object = Instantiate(info.Prefab);
@@ -61,15 +67,19 @@ namespace JumpMaster.UI
 
             MissileWarning generated = game_object.GetComponent<MissileWarning>();
 
-            generated.Initialize(info, data);
+            s_info = info;
+            s_data = data;
+
+            generated.Initialize();
+            generated.Initialized = true;
 
             return generated;
         }
 
-        private void Initialize(MissileWarningSO info, MissileWarningData data)
+        protected override void Initialize()
         {
-            _info = info;
-            _data = data;
+            _info = s_info;
+            _data = s_data;
 
             _ended = false;
 
@@ -105,15 +115,41 @@ namespace JumpMaster.UI
 
             gameObject.SetActive(true);
 
-            StartCoroutine(Countdown());
+            _countdownStartTime = Time.time;
+
             StartCoroutine(Action());
         }
 
-        private IEnumerator Countdown()
+        protected override void Pause()
         {
-            yield return new WaitForSeconds(_data.Duration);
+            
+        }
 
-            _ended = true;
+        protected override void Unpause()
+        {
+            _countdownStartTime += LevelController.LastPauseTime;
+        }
+
+        protected override void PlayerDeath()
+        {
+            Restart();
+        }
+
+        protected override void Restart()
+        {
+            Destroy(gameObject);
+        }
+
+        private void Update()
+        {
+            if (LevelController.Paused)
+                return;
+
+            if (_ended)
+                return;
+
+            if (Time.time - _countdownStartTime > _data.Duration)
+                _ended = true;
         }
 
         private IEnumerator Action()

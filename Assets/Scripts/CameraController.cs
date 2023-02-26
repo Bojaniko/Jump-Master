@@ -39,7 +39,7 @@ namespace JumpMaster.LevelControllers
             _ascendingSpeed = AscendingSpeed;
         }
 
-        protected override void Death()
+        protected override void PlayerDeath()
         {
             
         }

@@ -13,6 +13,8 @@ namespace JumpMaster.LevelControllers
         public static bool LevelLoaded { get { return Instance._controllersInitialized; } }
         public static bool Paused { get; private set; }
 
+        public static float LastPauseTime { get; private set; }
+
         public delegate void LevelActivityEventHandler();
         public event LevelActivityEventHandler OnLevelStarted;
         public event LevelActivityEventHandler OnLevelPaused;
@@ -41,7 +43,7 @@ namespace JumpMaster.LevelControllers
             Physics.gravity = new Vector3(0, -Gravity, 0);
 
             PauseButton.OnPause += () => { Paused = true; OnLevelPaused(); };
-            PauseButton.OnResume += () => { OnLevelStarted(); Paused = false; };
+            PauseButton.OnResume += () => { OnLevelStarted(); LastPauseTime = Time.time; Paused = false; };
         }
 
         private void Update()

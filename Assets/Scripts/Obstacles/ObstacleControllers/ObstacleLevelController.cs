@@ -7,12 +7,94 @@ using JumpMaster.Obstacles;
 
 namespace JumpMaster.LevelControllers.Obstacles
 {
-    public class ObstacleLevelController : MonoBehaviour
+    public class ObstacleLevelController : LevelControllerBase
     {
+        private static ObstacleLevelController s_instance;
+        public static ObstacleLevelController Instance
+        {
+            get
+            {
+                if (s_instance == null)
+                    s_instance = new GameObject().AddComponent<ObstacleLevelController>();
+                return s_instance;
+            }
+        }
+
+        private void InitializeControllers()
+        {
+
+            if (_missileController == null)
+                _missileController = new(_data.DefaultControllersData.Missile);
+
+            if (_fallingBombController == null)
+                _fallingBombController = new(_data.DefaultControllersData.FallingBomb);
+
+            if (_laserGateController == null)
+                _laserGateController = new(_data.DefaultControllersData.LaserGate);
+
+            if (_waveController == null)
+            {
+                List<ObstacleController> controllers = new();
+
+                controllers.Add(_missileController);
+                controllers.Add(_fallingBombController);
+                controllers.Add(_laserGateController);
+
+                _waveController = new(controllers);
+
+                _waveController.NewWave(_data.GetRandomNormalWave());
+            }
+        }
+
+        protected override void Initialize()
+        {
+            if (s_instance != null)
+            {
+                if (s_instance.Equals(this) == false)
+                    Destroy(this);
+            }
+            else s_instance = this;
+
+            _data = LevelController.Instance.ObstacleLevelControllerData;
+
+            if (_data == null)
+            {
+                Debug.LogError("There is no data for the Obstacle Controller!");
+                enabled = false;
+                return;
+            }
+
+            _activeObstacles = new();
+            _activeObstaclesInTop = new();
+
+            _topSpawnMarginScreen = Screen.height - ((Screen.height / 100f) * _data.TopSpawnMarginPercentage);
+            _spawnCheckInterval = _data.SpawnCheckInterval / 1000f;
+
+            InitializeControllers();
+        }
+
+        protected override void Pause()
+        {
+
+        }
+
+        protected override void Unpause()
+        {
+
+        }
+
+        protected override void PlayerDeath()
+        {
+
+        }
+
+        protected override void Restart()
+        {
+
+        }
+
         public delegate void SpawnLoopEventHandler();
         public event SpawnLoopEventHandler OnLoop;
-
-        private bool _initialized = false;
 
         private float _spawnCheckInterval;
         private Coroutine _controllersCoroutine;
@@ -41,13 +123,6 @@ namespace JumpMaster.LevelControllers.Obstacles
                             _activeObstacles.AddRange(_waveController.Controllers[i].Self.ControllerData.ActiveObstacles);
 
                     }
-                    /*if (_missileController.ControllerData.Pool.ActiveObstaclesControlled > 0)
-                        _activeObstacles.AddRange(_missileController.ControllerData.Pool.ActiveObstacles);
-                    if (_fallingBombController.ControllerData.Pool.ActiveObstaclesControlled > 0)
-                        _activeObstacles.AddRange(_fallingBombController.ControllerData.Pool.ActiveObstacles);
-                    if (_laserGateController.ControllerData.Pool.ActiveObstaclesControlled > 0)
-                        _activeObstacles.AddRange(_laserGateController.ControllerData.Pool.ActiveObstacles);*/
-
                     _lastCheckActiveObstacles = Time.time;
                 }
 
@@ -79,87 +154,12 @@ namespace JumpMaster.LevelControllers.Obstacles
             }
         }
 
-        private static ObstacleLevelController s_instance;
-        public static ObstacleLevelController Instance
-        {
-            get
-            {
-                if (s_instance == null)
-                    s_instance = new GameObject().AddComponent<ObstacleLevelController>();
-                return s_instance;
-            }
-        }
-
-        private void Awake()
-        {
-            if (s_instance != null)
-            {
-                if (s_instance.Equals(this) == false)
-                    Destroy(this);
-            } else s_instance = this;
-
-            _data = Instantiate(LevelController.Instance.ObstacleLevelControllerData);
-
-            if (_data == null)
-            {
-                Debug.LogError("There is no data for the Obstacle Controller!");
-                enabled = false;
-                return;
-            }
-
-            _activeObstacles = new();
-            _activeObstaclesInTop = new();
-
-            _topSpawnMarginScreen = Screen.height - ((Screen.height / 100f) * _data.TopSpawnMarginPercentage);
-            _spawnCheckInterval = _data.SpawnCheckInterval / 1000f;
-
-            InitializeControllers();
-
-            LevelController.Instance.OnLevelStarted += StartControllers;
-            LevelController.Instance.OnLevelPaused += PauseControllers;
-
-            _initialized = true;
-        }
-
-        private void InitializeControllers()
-        {
-
-            if (_missileController == null)
-                _missileController = new(_data.DefaultControllersData.Missile);
-
-            if (_fallingBombController == null)
-                _fallingBombController = new(_data.DefaultControllersData.FallingBomb);
-
-            if (_laserGateController == null)
-                _laserGateController = new(_data.DefaultControllersData.LaserGate);
-
-            if (_waveController == null)
-            {
-                List<ObstacleController> controllers = new();
-
-                controllers.Add(_missileController);
-                controllers.Add(_fallingBombController);
-                controllers.Add(_laserGateController);
-
-                _waveController = new(controllers);
-
-                _waveController.NewWave(_data.GetRandomNormalWave());
-            }
-        }
-
-        private void StartControllers()
-        {
-            _controllersCoroutine = StartCoroutine(ControllersLoop());
-        }
-
-        private void PauseControllers()
-        {
-            StopCoroutine(_controllersCoroutine);
-        }
-
         private IEnumerator ControllersLoop()
         {
             yield return new WaitForSeconds(_spawnCheckInterval);
+
+            if (LevelController.Paused)
+                yield return ControllersLoop();
 
             if (ActiveObstacles.Length >= _data.MaxObstaclesAtOnce)
                 yield return ControllersLoop();

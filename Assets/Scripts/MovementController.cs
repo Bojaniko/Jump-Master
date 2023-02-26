@@ -42,20 +42,13 @@ namespace JumpMaster.LevelControllers
 
             StateController = new("Movement", MovementState.STILL);
 
-            _playerGameObject = LevelController.Instance.PlayerGameObject;
+            _rigidbody = LevelController.Instance.PlayerGameObject.GetComponent<Rigidbody>();
 
-            _rigidbody = _playerGameObject.GetComponent<Rigidbody>();
-
-            _bounds = _playerGameObject.GetComponent<BoxCollider>();
-
-            Vector3 startPosition = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, 0f, Z_Position));
-            startPosition.y += (_bounds.bounds.max.y - _bounds.bounds.min.y) * 0.5f;
-            _playerGameObject.transform.position = startPosition;
-
-            _jumpChain = 0;
-            _jumpChainPenaltyTime = -JumpChainPenaltyDuration;
+            _bounds = LevelController.Instance.PlayerGameObject.GetComponent<BoxCollider>();
 
             _hangFromScreenWidth = Screen.width - HangingStickDistanceScreen;
+
+            Restart();
         }
 
         protected override void Pause()
@@ -67,19 +60,35 @@ namespace JumpMaster.LevelControllers
 
         protected override void Unpause()
         {
+            if (_jumpChain > 0)
+                _jumpChainPenaltyTime += LevelController.LastPauseTime;
+
+            if (_dashChain > 0)
+                _dashChainPenaltyTime += LevelController.LastPauseTime;
+
             EnableInput();
 
             StateController.SetState(StateController.DeltaState);
         }
 
-        protected override void Death()
+        protected override void PlayerDeath()
         {
-            
+            DisableInput();
         }
 
         protected override void Restart()
         {
-            
+            StateController.SetState(MovementState.STILL);
+
+            _jumpChain = 0;
+            _jumpChainPenaltyTime = -JumpChainPenaltyDuration;
+
+            _dashChain = 0;
+            _dashChainPenaltyTime = -DashChainPenaltyDuration;
+
+            Vector3 startPosition = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, 0f, Z_Position));
+            startPosition.y += (_bounds.bounds.max.y - _bounds.bounds.min.y) * 0.5f;
+            LevelController.Instance.PlayerGameObject.transform.position = startPosition;
         }
 
         private void EnableInput()
@@ -120,8 +129,6 @@ namespace JumpMaster.LevelControllers
         private BoxCollider _bounds;
 
         public StateMachine<MovementState> StateController { get; private set; }
-
-        private GameObject _playerGameObject;
 
         private Rigidbody _rigidbody;
 
@@ -279,7 +286,7 @@ namespace JumpMaster.LevelControllers
                 // Allow the player to chain a jump if the current height from the start of the current jump is at a minimum percentage
                 if (StateController.CurrentState.Equals(MovementState.JUMPING))
                 {
-                    if ((_playerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight < MinJumpChainHeight)
+                    if ((LevelController.Instance.PlayerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight < MinJumpChainHeight)
                         return false;
                 }
 
@@ -358,7 +365,7 @@ namespace JumpMaster.LevelControllers
 
             if (StateController.CurrentState.Equals(MovementState.JUMPING))
             {
-                if ((_playerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight < MinJumpChainHeight)
+                if ((LevelController.Instance.PlayerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight < MinJumpChainHeight)
                     return false;
             }
 
@@ -377,6 +384,9 @@ namespace JumpMaster.LevelControllers
 
         private void Update()
         {
+            if (LevelController.Paused)
+                return;
+
             if (_jumpChain > 0 && _jumpChargeStarted == false && Time.time - _jumpChainPenaltyTime > JumpChainPenaltyDuration)
                 _jumpChain = 0;
 
@@ -437,7 +447,7 @@ namespace JumpMaster.LevelControllers
             _dashChain++;
             _dashChainPenaltyTime = Time.time;
             _horizontalDirection = direction;
-            _dashStartPosition = _playerGameObject.transform.position;
+            _dashStartPosition = LevelController.Instance.PlayerGameObject.transform.position;
 
             _dashVectorDirection = Vector3.right * _horizontalDirection;
             if (StateController.CurrentState.Equals(MovementState.JUMPING)
@@ -449,7 +459,7 @@ namespace JumpMaster.LevelControllers
 
             if (OnDash != null)
             {
-                Vector3 pivot = new Vector3(_bounds.bounds.min.x, _playerGameObject.transform.position.y, _playerGameObject.transform.position.z);
+                Vector3 pivot = new Vector3(_bounds.bounds.min.x, LevelController.Instance.PlayerGameObject.transform.position.y, LevelController.Instance.PlayerGameObject.transform.position.z);
                 Quaternion dash_direction = Quaternion.LookRotation(Vector3.right * _horizontalDirection, Vector3.up);
                 OnDash(pivot, dash_direction);
             }
@@ -457,7 +467,7 @@ namespace JumpMaster.LevelControllers
 
         private void Dash()
         {
-            _dashDistancePercentage = Mathf.Abs(_dashStartPosition.x - _playerGameObject.transform.position.x) / DashDistance;
+            _dashDistancePercentage = Mathf.Abs(_dashStartPosition.x - LevelController.Instance.PlayerGameObject.transform.position.x) / DashDistance;
 
             if (_dashDistancePercentage < MinDashChainDistance)
                 _rigidbody.velocity = Vector3.Lerp(_dashVectorDirection * DashForce, Vector3.zero, _dashDistancePercentage);
@@ -485,9 +495,9 @@ namespace JumpMaster.LevelControllers
                 hang_position = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width - ((BoundsScreenPosition.max.x - BoundsScreenPosition.min.x) / 2), 0));
             if (_hangDirection == -1)
                 hang_position = Camera.main.ScreenToWorldPoint(new Vector2((BoundsScreenPosition.max.x - BoundsScreenPosition.min.x) / 2, 0));
-            hang_position.y = _playerGameObject.transform.position.y;
-            hang_position.z = _playerGameObject.transform.position.z;
-            _playerGameObject.transform.position = hang_position;
+            hang_position.y = LevelController.Instance.PlayerGameObject.transform.position.y;
+            hang_position.z = LevelController.Instance.PlayerGameObject.transform.position.z;
+            LevelController.Instance.PlayerGameObject.transform.position = hang_position;
 
             StateController.SetState(MovementState.HANGING);
         }
@@ -504,7 +514,7 @@ namespace JumpMaster.LevelControllers
 
             _jumpChain++;
             _jumpChainPenaltyTime = Time.time;
-            _jumpStartHeight = _playerGameObject.transform.position.y;
+            _jumpStartHeight = LevelController.Instance.PlayerGameObject.transform.position.y;
 
             _jumpDirection = Vector3.up;
             if (StateController.CurrentState.Equals(MovementState.DASHING) && _dashDistancePercentage < MaxJumpDashChainDistance)
@@ -517,7 +527,7 @@ namespace JumpMaster.LevelControllers
 
             if (OnJump != null)
             {
-                Vector3 pivot = _playerGameObject.transform.position;
+                Vector3 pivot = LevelController.Instance.PlayerGameObject.transform.position;
                 pivot.y = _bounds.bounds.min.y;
                 OnJump(pivot);
             }
@@ -525,7 +535,7 @@ namespace JumpMaster.LevelControllers
 
         private void Jump()
         {
-            float heightPercentage = (_playerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight;
+            float heightPercentage = (LevelController.Instance.PlayerGameObject.transform.position.y - _jumpStartHeight) / _jumpHeight;
             _rigidbody.velocity = Vector3.Lerp(_jumpDirection * _jumpForce, Vector3.zero, heightPercentage);
         }
 

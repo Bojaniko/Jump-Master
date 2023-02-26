@@ -45,7 +45,7 @@ namespace JumpMaster.Controls
 
         }
 
-        protected override void Death()
+        protected override void PlayerDeath()
         {
 
         }

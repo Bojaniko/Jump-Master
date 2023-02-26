@@ -1,32 +1,28 @@
 using UnityEngine;
 
+using JumpMaster.Structure;
+
 namespace JumpMaster.LevelControllers
 {
-    public abstract class LevelControllerBase : MonoBehaviour
+    public abstract class LevelControllerBase : InstantiablePausable
     {
-        protected abstract void Initialize();
-        protected abstract void Pause();
-        protected abstract void Unpause();
-        protected abstract void Death();
-        protected abstract void Restart();
-
-        private bool _initialized = false;
-
-        protected bool _paused { get; private set; }
+        protected abstract override void Initialize();
+        protected abstract override void Pause();
+        protected abstract override void Unpause();
+        protected abstract override void PlayerDeath();
+        protected abstract override void Restart();
 
         private void Awake()
         {
-            if (_initialized)
+            if (Initialized)
                 return;
-
-            _paused = true;
 
             Initialize();
 
-            LevelController.Instance.OnLevelPaused += () => { _paused = true; Pause(); };
-            LevelController.Instance.OnLevelStarted += () => { _paused = false; Unpause(); };
+            LevelController.Instance.OnLevelPaused += Pause;
+            LevelController.Instance.OnLevelStarted += Unpause;
 
-            _initialized = true;
+            Initialized = true;
         }
     }
 }
