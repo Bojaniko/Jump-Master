@@ -7,7 +7,7 @@ using JumpMaster.Obstacles;
 
 namespace JumpMaster.LevelControllers.Obstacles
 {
-    public class ObstacleLevelController : LevelControllerBase
+    public class ObstacleLevelController : LevelControllerInitializablePausable
     {
         private static ObstacleLevelController s_instance;
         public static ObstacleLevelController Instance
@@ -89,6 +89,11 @@ namespace JumpMaster.LevelControllers.Obstacles
         }
 
         protected override void Restart()
+        {
+
+        }
+
+        protected override void LevelLoaded()
         {
 
         }

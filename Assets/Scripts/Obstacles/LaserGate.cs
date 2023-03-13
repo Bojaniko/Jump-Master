@@ -2,7 +2,7 @@ using System.Collections;
 
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Structure;
 using JumpMaster.LevelControllers.Obstacles;
 
 using Studio28.SFX;
@@ -71,25 +71,25 @@ namespace JumpMaster.Obstacles
 
         private IEnumerator LaserGateLoop()
         {
-            yield return new WaitForSeconds(_countdownInterval);
+            yield return new WaitForSecondsPausable(_countdownInterval);
 
             SetMaterialColor("light_0", _spawnController.SpawnData.ActiveColor);
 
-            yield return new WaitForSeconds(_countdownInterval);
+            yield return new WaitForSecondsPausable(_countdownInterval);
 
             SetMaterialColor("light_1", _spawnController.SpawnData.ActiveColor);
 
-            yield return new WaitForSeconds(_countdownInterval);
+            yield return new WaitForSecondsPausable(_countdownInterval);
 
             SetMaterialColor("light_2", _spawnController.SpawnData.ActiveColor);
 
-            yield return new WaitForSeconds(_countdownInterval);
+            yield return new WaitForSecondsPausable(_countdownInterval);
 
             SetMaterialColor("light_main", _spawnController.SpawnData.ActiveColor);
 
             LaserLinesSetActive(true);
 
-            yield return new WaitForSeconds(_spawnController.SpawnData.GateHoldTime);
+            yield return new WaitForSecondsPausable(_spawnController.SpawnData.GateHoldTime);
 
             ResetMaterials();
 
@@ -100,7 +100,7 @@ namespace JumpMaster.Obstacles
 
         protected override void Spawn()
         {
-            transform.position = new Vector3(_spawnController.SpawnArgs.SpawnPosition.x, _spawnController.SpawnArgs.SpawnPosition.y, transform.position.z);
+            transform.position = new Vector3(_spawnController.SpawnArgs.SpawnPosition.x, _spawnController.SpawnArgs.SpawnPosition.y, Data.Z_Position);
 
             _countdownInterval = _spawnController.SpawnData.CountdownIntervalMS / 1000f;
 
@@ -111,9 +111,7 @@ namespace JumpMaster.Obstacles
             _rightGate.transform.localPosition = new Vector3(0, 0, -_spawnController.SpawnData.GateWidth * 0.5f);
 
             CalculateLaserLines();
-
             LaserLinesSetActive(false);
-
             ResetMaterials();
 
             gameObject.SetActive(true);
@@ -256,7 +254,9 @@ namespace JumpMaster.Obstacles
 
         protected override void Restart()
         {
-            
+            LaserLinesSetActive(false);
+            ResetMaterials();
+            _spawnController.Despawn();
         }
 
         protected override void OnUpdate()
@@ -281,19 +281,16 @@ namespace JumpMaster.Obstacles
                 switch (current_laser.name)
                 {
                     case "laser_0":
-
                         current_laser.positionCount = 2;
                         current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[0].position, _laserPointsRight[0].position });
                         continue;
 
                     case "laser_1":
-
                         current_laser.positionCount = 2;
                         current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[1].position, _laserPointsRight[1].position });
                         continue;
 
                     case "laser_2":
-
                         current_laser.positionCount = 2;
                         current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[2].position, _laserPointsRight[2].position });
                         continue;

@@ -1,0 +1,25 @@
+.pause-button {
+    background-image: url('project://database/Assets/Textures/pause.png?fileID=2800000&guid=57b883c5e8637c14cb5893e03d717dce&type=3#pause');
+    align-items: auto;
+    width: 100px;
+    height: 100px;
+    background-color: rgba(164, 164, 164, 0);
+    -unity-background-image-tint-color: rgb(195, 195, 195);
+    top: 100%;
+    position: relative;
+    translate: -150px -150px;
+    left: 100%;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.pause-button:active {
+    background-color: rgba(176, 176, 176, 0);
+    -unity-background-image-tint-color: rgb(255, 0, 0);
+}

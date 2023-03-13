@@ -10,6 +10,8 @@ namespace Studio28.Utility
 
         public readonly StateType DefaultState;
 
+        public float StateChangeTime = 0f;
+
         public StateType CurrentState { get; private set; }
         public StateType DeltaState { get; private set; }
 
@@ -33,10 +35,17 @@ namespace Studio28.Utility
 
                 CurrentState = movement_state;
 
+                StateChangeTime = UnityEngine.Time.time;
+
                 if (OnStateChanged != null) OnStateChanged(movement_state);
 
                 //Debug.Log(_name + " state set to " + CurrentState);
             }
+        }
+
+        public override string ToString()
+        {
+            return _name + ", default state" + DefaultState.ToString(); 
         }
     }
 }

@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace JumpMaster.LevelControllers
 {
-    public class ScoreController : MonoBehaviour
+    public class ScoreController : LevelControllerInitializablePausable
     {
         private float _startHeight;
 
         public float Score { get; private set; } = 0f;
-
-        private LevelController _levelController;
 
         private static ScoreController s_instance;
 
@@ -29,18 +27,41 @@ namespace JumpMaster.LevelControllers
             }
         }
 
-        private void Awake()
+        protected override void Initialize()
         {
             Instance = this;
 
-            _levelController = LevelController.Instance;
+            _startHeight = PlayerController.Instance.transform.position.y;
+        }
 
-            _startHeight = _levelController.PlayerGameObject.transform.position.y;
+        protected override void Pause()
+        {
+
+        }
+
+        protected override void Unpause()
+        {
+
+        }
+
+        protected override void PlayerDeath()
+        {
+
+        }
+
+        protected override void Restart()
+        {
+            _startHeight = PlayerController.Instance.transform.position.y;
+        }
+
+        protected override void LevelLoaded()
+        {
+
         }
 
         private void Update()
         {
-            if (_levelController.PlayerGameObject.transform.position.y - _startHeight > Score) Score = _levelController.PlayerGameObject.transform.position.y - _startHeight;
+            if (PlayerController.Instance.transform.position.y - _startHeight > Score) Score = PlayerController.Instance.transform.position.y - _startHeight;
         }
     }
 }

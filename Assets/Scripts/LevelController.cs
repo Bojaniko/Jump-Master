@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
+
 using UnityEngine;
 
 using JumpMaster.Obstacles;
@@ -7,17 +10,26 @@ namespace JumpMaster.LevelControllers
 {
     public class LevelController : MonoBehaviour
     {
+        [Range(1f, 10f)]
+        public float Gravity = 9.81f;
+        public ObstacleLevelControllerSO ObstacleLevelControllerData;
 
-        private bool _controllersInitialized;
-
-        public static bool LevelLoaded { get { return Instance._controllersInitialized; } }
+        public static bool Loaded { get; private set; }
+        public static bool Started { get; private set; }
         public static bool Paused { get; private set; }
+        public static float LastPauseStartTime { get; private set; }
+        public static float LastPauseEndTime { get; private set; }
+        public static float LastPauseDuration { get; private set; }
 
-        public static float LastPauseTime { get; private set; }
+        private List<ILevelController> _controllers;
 
         public delegate void LevelActivityEventHandler();
         public event LevelActivityEventHandler OnLevelStarted;
+        public event LevelActivityEventHandler OnLevelLoaded;
+        public event LevelActivityEventHandler OnLevelResume;
         public event LevelActivityEventHandler OnLevelPaused;
+        public event LevelActivityEventHandler OnPlayerDeath;
+        public event LevelActivityEventHandler OnLevelReset;
 
         private static LevelController s_instance;
 
@@ -40,34 +52,102 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
+            Paused = true;
+            Started = false;
+
+            _controllers = new();
+            _controllers.AddRange(FindObjectsOfType<LevelControllerInitializable>());
+            _controllers.AddRange(FindObjectsOfType<LevelControllerInitializablePausable>());
+
+            StartCoroutine(InitializationLoop());
+
             Physics.gravity = new Vector3(0, -Gravity, 0);
 
-            PauseButton.OnPause += () => { Paused = true; OnLevelPaused(); };
-            PauseButton.OnResume += () => { OnLevelStarted(); LastPauseTime = Time.time; Paused = false; };
+            PauseButton.OnPause += PauseLevel;
+            ResumeButton.OnResume += ResumeLevel;
+            RestartButton.OnRestart += ResetLevel;
         }
 
-        private void Update()
+        private void LoadedLevel()
         {
-            if (!_controllersInitialized)
-            {
-                StartLevel();
-                _controllersInitialized = true;
-            }
+            if (OnLevelLoaded != null)
+                OnLevelLoaded();
+
+            Loaded = true;
+            Paused = true;
+            Started = false;
+
+            if (MovementController.Instance != null)
+                MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
+
+            ResumeLevel();
         }
 
-        public void StartLevel()
+        private void StartLevel()
         {
             if (OnLevelStarted != null)
                 OnLevelStarted();
 
+            Started = true;
             Paused = false;
         }
 
-        [Range(1f, 10f)]
-        public float Gravity = 9.81f;
+        private void ResetLevel()
+        {
+            Started = false;
+            Paused = true;
 
-        public GameObject PlayerGameObject;
+            if (OnLevelReset != null)
+                OnLevelReset();
 
-        public ObstacleLevelControllerSO ObstacleLevelControllerData;
+            if (MovementController.Instance != null)
+                MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
+        }
+
+        private void PauseLevel()
+        {
+            Paused = true;
+
+            if (OnLevelPaused != null)
+                OnLevelPaused();
+
+            LastPauseStartTime = Time.time;
+        }
+
+        private void ResumeLevel()
+        {
+            if (OnLevelResume != null)
+                OnLevelResume();
+
+            Paused = false;
+            LastPauseEndTime = Time.time;
+            LastPauseDuration = LastPauseEndTime - LastPauseStartTime;
+        }
+
+        private IEnumerator InitializationLoop()
+        {
+            for (int i = 0; i < _controllers.Count; i++)
+            {
+                yield return new WaitUntil(() =>
+                {
+                    return _controllers[i].ControllerInitialized;
+                });
+            }
+
+            LoadedLevel();
+        }
+
+        private void DetectLevelStart(MovementState state)
+        {
+            if (!state.Equals(MovementState.JUMPING))
+                return;
+
+            if (Started)
+                return;
+
+            StartLevel();
+
+            MovementController.Instance.StateController.OnStateChanged -= DetectLevelStart;
+        }
     }
 }

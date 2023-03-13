@@ -2,6 +2,7 @@ using System.Collections;
 
 using UnityEngine;
 
+using JumpMaster.Structure;
 using JumpMaster.LevelControllers;
 using JumpMaster.LevelControllers.Obstacles;
 
@@ -11,12 +12,10 @@ namespace JumpMaster.Obstacles
 {
     public sealed class FallingBombArgs : SpawnArgs
     {
-        public readonly Vector3 SpawnPosition;
         public readonly int SpawnPositionOrder;
 
-        public FallingBombArgs(Vector3 screen_position, Vector3 spawn_position, int spawn_position_order) : base(screen_position)
+        public FallingBombArgs(Vector3 screen_position, int spawn_position_order) : base(screen_position)
         {
-            SpawnPosition = spawn_position;
             SpawnPositionOrder = spawn_position_order;
         }
     }
@@ -68,18 +67,20 @@ namespace JumpMaster.Obstacles
 
         protected override void Spawn()
         {
-            transform.position = _spawnController.SpawnArgs.SpawnPosition;
+            _currentDetectionShowTime = _detectionShowDuration;
+            _bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
+            _detectionRenderer.material.SetFloat("_Transparency", 1f);
+
+            Vector2 pos_screen_margined = _spawnController.SpawnArgs.ScreenPosition;
+            pos_screen_margined.y += (BoundsScreenPosition.max.y - BoundsScreenPosition.min.y);
+            Vector3 pos_world = CameraController.Instance.Camera.ScreenToWorldPoint(pos_screen_margined);
+            pos_world.z = Data.Z_Position;
+            transform.position = pos_world;
 
             _sphereCol.radius = _spawnController.SpawnData.DetectionRadius;
             _detectionRenderer.transform.localScale = Vector3.one * (1 / _data.Scale) * _spawnController.SpawnData.DetectionRadius;
-
-            _currentDetectionShowTime = _detectionShowDuration;
             _detectionShowDistanceScreen = Vector2.Distance(Camera.main.WorldToScreenPoint(Vector2.zero), Camera.main.WorldToScreenPoint(new Vector2(0, _spawnController.SpawnData.DetectionShowDistance)));
-
             _armingDuration = _spawnController.SpawnData.ArmingDurationMS / 1000f;
-
-            _bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
-            _detectionRenderer.material.SetFloat("_Transparency", 1f);
 
             gameObject.SetActive(true);
         }
@@ -105,15 +106,16 @@ namespace JumpMaster.Obstacles
             _sfxController.PlaySound(Data.ArmingBeepSound, gameObject);
             _bombLightRef.SetColor("_Color", Data.ArmedLightColor);
 
-            yield return new WaitForSeconds(_armingDuration);
+            yield return new WaitForSecondsPausable(_armingDuration);
 
             _sfxController.PlaySound(Data.ArmingBeepSound, gameObject);
             _animator.Play("explode", 1);
 
-            yield return new WaitForSeconds(_armingDuration);
+            yield return new WaitForSecondsPausable(_armingDuration);
 
             _sfxController.PlaySound(Data.ExplosionSound, gameObject);
             Instantiate(Data.ExplosionPrefab, transform.position - Vector3.forward * 0.2f, Quaternion.identity);
+            DamageController.LogDamage(new DamageInfo(transform.position, _spawnController.SpawnData.DetectionRadius, 30f));
 
             yield return new WaitForSeconds(_gameObjectDestroyDuration);
 
@@ -172,29 +174,33 @@ namespace JumpMaster.Obstacles
 
         protected override void Pause()
         {
-
+            _rigidbody.velocity = Vector3.zero;
+            _animator.SetFloat("Speed", 0f);
         }
 
         protected override void Unpause()
         {
-
+            _animator.SetFloat("Speed", 1f);
         }
 
         protected override void PlayerDeath()
         {
-
+            _explodeCoroutine = StartCoroutine("Explode");
         }
 
         protected override void Restart()
         {
-
+            _currentDetectionShowTime = _detectionShowDuration;
+            _bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
+            _detectionRenderer.material.SetFloat("_Transparency", 1f);
+            _spawnController.Despawn();
         }
 
         protected override void OnUpdate()
         {
             if (_explodeCoroutine == null)
             {
-                if (Vector2.Distance(ScreenPosition, Camera.main.WorldToScreenPoint(LevelController.Instance.PlayerGameObject.transform.position)) <= _detectionShowDistanceScreen)
+                if (Vector2.Distance(ScreenPosition, Camera.main.WorldToScreenPoint(PlayerController.Instance.transform.position)) <= _detectionShowDistanceScreen)
                 {
                     if (_currentDetectionShowTime > 0.0f) ShowDetection();
                 }
@@ -211,8 +217,13 @@ namespace JumpMaster.Obstacles
 
         private void FixedUpdate()
         {
-            if (_explodeCoroutine == null)
-                _rigidbody.velocity = Vector3.down * _animator.GetFloat("Falling");
+            if (LevelController.Paused)
+                return;
+
+            if (_explodeCoroutine != null)
+                return;
+
+            _rigidbody.velocity = Vector3.down * _animator.GetFloat("Falling");
         }
 
         private void OnTriggerEnter(Collider other)

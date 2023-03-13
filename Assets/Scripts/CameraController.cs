@@ -4,9 +4,8 @@ using UnityEngine;
 
 namespace JumpMaster.LevelControllers
 {
-    public class CameraController : LevelControllerBase
+    public class CameraController : LevelControllerInitializablePausable
     {
-
         private static CameraController s_instance;
 
         public static CameraController Instance
@@ -27,6 +26,8 @@ namespace JumpMaster.LevelControllers
         protected override void Initialize()
         {
             Instance = this;
+
+            LevelController.Instance.OnLevelStarted += StartRise;
         }
 
         protected override void Pause()
@@ -46,7 +47,15 @@ namespace JumpMaster.LevelControllers
 
         protected override void Restart()
         {
-            
+            _cameraPosition = Camera.transform.position;
+            _cameraPosition.y -= _ascendingHeight - _ascendingStartHeight;
+
+            _ascendingHeight = 0f;
+        }
+
+        protected override void LevelLoaded()
+        {
+
         }
 
         public Camera Camera;
@@ -60,37 +69,27 @@ namespace JumpMaster.LevelControllers
         [Range(1f, 10f)]
         public float ReachEdgeSpeed = 2f;
 
-        public bool AscendingStarted { get; private set; } = false;
-
         private float _ascendingSpeed = 0f;
         private float _ascendingHeight = 0f;
         private float _ascendingStartHeight = 0f;
 
         private Vector3 _cameraPosition;
 
-        private void Start()
-        {
-            if (MovementController.Instance != null)
-                MovementController.Instance.StateController.OnStateChanged += StartRise;
-        }
-
         private void Update()
         {
-            if (!AscendingStarted)
+            if (!LevelController.Started)
                 return;
             if (_ascendingSpeed == 0f)
                 return;
-
-            float _dashingWidth = 0f;
 
             if (MovementController.Instance.StateController.CurrentState.Equals(MovementState.JUMPING) ||
                 MovementController.Instance.StateController.CurrentState.Equals(MovementState.FLOATING))
             {
                 if (MovementController.Instance.BoundsScreenPosition.max.y > Screen.height - MaxScreenHeightPosition)
                 {
-                    float playerHeightDifference = LevelController.Instance.PlayerGameObject.GetComponent<Collider>().bounds.max.y -
+                    float playerHeightDifference = PlayerController.Instance.GetComponent<Collider>().bounds.max.y -
                         Camera.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
-                        Vector3.Distance(Camera.transform.position, LevelController.Instance.PlayerGameObject.transform.position))).y;
+                        Vector3.Distance(Camera.transform.position, PlayerController.Instance.transform.position))).y;
 
                     _ascendingHeight += playerHeightDifference * ReachEdgeSpeed * Time.deltaTime;
                 }
@@ -100,19 +99,14 @@ namespace JumpMaster.LevelControllers
                 _ascendingHeight += AscendingSpeed * Time.deltaTime;
 
             _cameraPosition = Camera.transform.position;
-            _cameraPosition.x += _dashingWidth * ReachEdgeSpeed * Time.deltaTime;
             _cameraPosition.y = _ascendingStartHeight + _ascendingHeight;
 
             Camera.transform.position = _cameraPosition;
         }
 
-        private void StartRise(MovementState state)
+        private void StartRise()
         {
-            if (!state.Equals(MovementState.JUMPING))
-                return;
-            AscendingStarted = true;
             _ascendingStartHeight = Camera.transform.position.y;
-            MovementController.Instance.StateController.OnStateChanged -= StartRise;
         }
     }
 }

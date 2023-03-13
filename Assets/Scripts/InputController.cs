@@ -7,7 +7,7 @@ using JumpMaster.LevelControllers;
 
 namespace JumpMaster.Controls
 {
-    public class InputController : LevelControllerBase
+    public class InputController : LevelControllerInitializable
     {
 
         private static InputController s_instance;
@@ -35,26 +35,6 @@ namespace JumpMaster.Controls
             _input.Enable();
         }
 
-        protected override void Pause()
-        {
-
-        }
-
-        protected override void Unpause()
-        {
-
-        }
-
-        protected override void PlayerDeath()
-        {
-
-        }
-
-        protected override void Restart()
-        {
-
-        }
-
         private InputActions _input;
 
         public delegate void SwipeEventHandler(Vector2 position, float time);
@@ -73,10 +53,7 @@ namespace JumpMaster.Controls
         public delegate void TapEventHandler();
         public event TapEventHandler OnTap;
 
-        public delegate void UITapEventHandler(Vector2 position);
-        public event UITapEventHandler OnTapUI;
-
-        void Start()
+        private void Start()
         {
             _input.Touch.Contact.performed += ctx => StartTouchPrimary(ctx);
             _input.Touch.Contact.canceled += ctx => EndTouchPrimary(ctx);
@@ -119,8 +96,6 @@ namespace JumpMaster.Controls
             {
                 bool was_paused = LevelController.Paused;
 
-                if (OnTapUI != null)
-                    OnTapUI(_input.Touch.Position.ReadValue<Vector2>());
                 if (was_paused == false && OnTap != null)
                     OnTap();
             }

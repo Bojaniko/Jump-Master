@@ -17,8 +17,7 @@ namespace JumpMaster.LevelControllers.Obstacles
         protected override void Spawn()
         {
             int spawn_point = GetSpawnPoint();
-            (Vector3 screen, Vector3 world) spawn_position = SpawnPositionAtPoint(spawn_point);
-            FallingBombArgs spawn_args = new FallingBombArgs(spawn_position.screen, spawn_position.world, spawn_point);
+            FallingBombArgs spawn_args = new FallingBombArgs(SpawnPositionAtPoint(spawn_point), spawn_point);
 
             _data.SpawnFromPool(_data.SpawnMetrics.GetRandomSpawnData(), spawn_args);
         }
@@ -95,20 +94,15 @@ namespace JumpMaster.LevelControllers.Obstacles
             return false;
         }
 
-        private (Vector3 screen, Vector3 world) SpawnPositionAtPoint(int spawn_point)
+        private Vector2 SpawnPositionAtPoint(int spawn_point)
         {
-            Vector3 position_screen;
-            Vector3 position_world;
+            Vector2 position_screen;
 
             float pos = Screen.width / (_data.SpawnMetrics.SpawnPoints + 1);
 
-            position_screen = new(pos * (spawn_point + 1), Screen.height, _data.ObstacleData.Z_Position);
+            position_screen = new(pos * (spawn_point + 1), Screen.height);
 
-            position_world = CameraController.Instance.Camera.ScreenToWorldPoint(position_screen);
-
-            position_world.y += _data.SpawnMetrics.SpawnOffset;
-
-            return (position_screen, position_world);
+            return position_screen;
         }
     }
 }

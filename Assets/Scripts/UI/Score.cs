@@ -10,11 +10,8 @@ namespace JumpMaster.UI
 {
     public class Score : MonoBehaviour
     {
-
         private int _score = 0;
-
         private Text _text;
-
         private ScoreController _scoreController;
 
         private void Awake()

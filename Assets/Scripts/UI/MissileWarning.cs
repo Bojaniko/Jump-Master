@@ -127,7 +127,7 @@ namespace JumpMaster.UI
 
         protected override void Unpause()
         {
-            _countdownStartTime += LevelController.LastPauseTime;
+            _countdownStartTime += LevelController.LastPauseDuration;
         }
 
         protected override void PlayerDeath()
@@ -156,7 +156,7 @@ namespace JumpMaster.UI
         {
             _image.enabled = true;
 
-            yield return new WaitForSeconds(_flashInterval);
+            yield return new WaitForSecondsPausable(_flashInterval);
 
             if (_ended)
             {
@@ -167,7 +167,7 @@ namespace JumpMaster.UI
 
             _image.enabled = false;
 
-            yield return new WaitForSeconds(_flashInterval);
+            yield return new WaitForSecondsPausable(_flashInterval);
 
             yield return Action();
         }

@@ -202,8 +202,6 @@ namespace JumpMaster.Obstacles
             _sfxController.PlayLoopSound<MissileThrustSFXSourceController>(Data.ThrustSFX, new MissileThrust_SFX_SC_Args(gameObject, _spawnController.SpawnArgs.Direction));
 
             gameObject.SetActive(true);
-
-            //Debug.Log("Missile warning ended");
         }
 
         private IEnumerator Explode()
@@ -235,7 +233,7 @@ namespace JumpMaster.Obstacles
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.Equals(LevelController.Instance.PlayerGameObject))
+            if (other.gameObject.Equals(PlayerController.Instance))
             {
                 _explodeCoroutine = StartCoroutine("Explode");
             }

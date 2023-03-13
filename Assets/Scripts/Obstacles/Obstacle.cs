@@ -82,7 +82,7 @@ namespace JumpMaster.Obstacles
 
             transform.localScale = Vector3.one * _data.Scale;
             transform.position = new Vector3(0, 0, _data.Z_Position);
-            Vector3 local_player_position = transform.InverseTransformPoint(LevelController.Instance.PlayerGameObject.transform.position);
+            Vector3 local_player_position = transform.InverseTransformPoint(PlayerController.Instance.transform.position);
             _sphereCol.center = new Vector3(_sphereCol.center.x, _sphereCol.center.y, local_player_position.z);
 
             for (int child = 0; child < transform.childCount; child++)
