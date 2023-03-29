@@ -83,6 +83,7 @@ namespace JumpMaster.LevelControllers
                 return;
 
             if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMPING) ||
+                MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING) ||
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
             {
                 if (MovementController.Instance.BoundsScreenPosition.max.y > Screen.height - MaxScreenHeightPosition)

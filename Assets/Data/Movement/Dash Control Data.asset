@@ -15,7 +15,7 @@ MonoBehaviour:
   Force: 10
   Distance: 5
   EndDistancePercentage: 0.95
-  MaxChain: 3
+  MaxChain: 4
   ChainPenaltyDuration: 2
-  MinChainDistance: 0.5
+  MinChainDistance: 0.2
   CrossChainVelocity: 0.5

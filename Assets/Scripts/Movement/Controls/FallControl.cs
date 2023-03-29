@@ -29,7 +29,6 @@ namespace JumpMaster.Movement
         protected override void StartControl()
         {
             Controller.ControlledRigidbody.useGravity = true;
-            //UpdateDirection(MovementDirection.Down);
         }
 
         public override Vector3 GetCurrentVelocity()

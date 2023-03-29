@@ -20,13 +20,15 @@ namespace JumpMaster.Movement
 
             InputController.Instance.OnHoldStarted += StartJumpCharge;
             InputController.Instance.OnHoldPerformed += () => ChargingJump = false;
-            InputController.Instance.OnHoldCancelled += () => ChargingJump = false;
+            InputController.Instance.OnHoldCancelled += CancelJumpCharge;
         }
         public override MovementState ActiveState { get { return MovementState.FLOATING; } }
 
         protected override bool CanStartControl()
         {
-            return CanExit();
+            if (ChargingJump)
+                return false;
+            return true;
         }
         protected override void StartControl()
         {
@@ -35,8 +37,6 @@ namespace JumpMaster.Movement
 
         public override bool CanExit()
         {
-            if (ChargingJump)
-                return false;
             return true;
         }
         protected override void ExitControl()
@@ -92,6 +92,16 @@ namespace JumpMaster.Movement
             if (OnInputDetected != null)
                 OnInputDetected(this, new(Controller.ControlledRigidbody, MovementDirection.Down));
             ChargingJump = true;
+        }
+
+        private void CancelJumpCharge()
+        {
+            if (!LevelController.Started)
+                return;
+
+            if (OnInputDetected != null)
+                OnInputDetected(Controller.GetControlByState(MovementState.FALLING), new(Controller.ControlledRigidbody, MovementDirection.Down));
+            ChargingJump = false;
         }
     }
 }

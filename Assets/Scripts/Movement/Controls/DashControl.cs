@@ -40,6 +40,8 @@ namespace JumpMaster.Movement
             if (!Started)
                 return;
 
+            DistancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / ControlData.Distance;
+
             if (DistancePercentage < ControlData.EndDistancePercentage)
                 return;
 
@@ -52,8 +54,6 @@ namespace JumpMaster.Movement
 
         public override Vector3 GetCurrentVelocity()
         {
-            DistancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / ControlData.Distance;
-
             if (DistancePercentage < ControlData.MinChainDistance)
                 return Vector3.Lerp(_vectorDirection * ControlData.Force, Vector3.zero, DistancePercentage);
             else
@@ -67,6 +67,8 @@ namespace JumpMaster.Movement
 
             if (Chain >= ControlData.MaxChain)
                 return false;
+
+            Debug.Log("Starting dash.");
 
             return true;
         }
@@ -118,6 +120,9 @@ namespace JumpMaster.Movement
             int dir = 0;
             if (direction.Equals(SwipeDirection.LEFT)) dir = -1;
             if (direction.Equals(SwipeDirection.RIGHT)) dir = 1;
+
+            if (dir == 0)
+                return;
 
             if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
             {

@@ -35,15 +35,6 @@ namespace JumpMaster.Movement
 
         public bool CanStart()
         {
-            if (_started)
-                return false;
-
-            if (Controller.ActiveControl == this)
-                return false;
-
-            if (!Controller.ActiveControl.CanExit())
-                return false;
-
             return CanStartControl();
         }
         protected abstract bool CanStartControl();

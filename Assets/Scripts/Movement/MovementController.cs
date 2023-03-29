@@ -113,26 +113,7 @@ namespace JumpMaster.Movement
 
             if (OnMovementUpdate != null)
                 OnMovementUpdate();
-
-            //TransitionableCheck();
         }
-
-        /*private void TransitionableCheck()
-        {
-            if (!ActiveControl.Started)
-                return;
-
-            if (!(ActiveControl is ITransitionable))
-                return;
-
-            ITransitionable transitionable = (ITransitionable)ActiveControl;
- \           if (!transitionable.CanTransition())
-                return;
-
-            IMovementControl transition_control = GetControlByState(transitionable.TransitionState);
-            MovementControlArgs start_args = new(ControlledRigidbody, ActiveControl.ControlArgs.Direction, 1f);
-            StartControl(transition_control, start_args);
-        }*/
 
         private void TryStartInputControl(IMovementControl control, MovementControlArgs start_args)
         {

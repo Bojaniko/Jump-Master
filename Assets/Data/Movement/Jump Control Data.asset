@@ -15,12 +15,8 @@ MonoBehaviour:
   Height: 3.5
   Force: 20
   EndForce: 0.5
-  ChargedHeight: 10
-  ChargedForce: 50
-  MinChargeDuration: 0.3
-  MaxChargeDuration: 0.6
-  MaxChain: 5
-  ChainPenaltyDuration: 1.5
+  MaxChain: 6
+  ChainPenaltyDuration: 2.5
   MinChainHeight: 0.75
   MaxCrossChainDistance: 0.9
-  CrossChainVelocity: 0.5
+  CrossChainVelocityPercentage: 0.5
