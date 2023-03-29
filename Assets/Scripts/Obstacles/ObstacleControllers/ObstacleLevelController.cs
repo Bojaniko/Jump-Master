@@ -9,6 +9,8 @@ namespace JumpMaster.LevelControllers.Obstacles
 {
     public class ObstacleLevelController : LevelControllerInitializablePausable
     {
+        public ObstacleLevelControllerSO ObstacleLevelControllerData;
+
         private static ObstacleLevelController s_instance;
         public static ObstacleLevelController Instance
         {
@@ -55,7 +57,7 @@ namespace JumpMaster.LevelControllers.Obstacles
             }
             else s_instance = this;
 
-            _data = LevelController.Instance.ObstacleLevelControllerData;
+            _data = ObstacleLevelControllerData;
 
             if (_data == null)
             {

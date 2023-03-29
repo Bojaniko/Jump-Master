@@ -4,9 +4,9 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-using JumpMaster.UI;
+using JumpMaster.LevelControllers;
 
-namespace JumpMaster.LevelControllers
+namespace JumpMaster.UI
 {
     public delegate void UIMenusEventHandler();
     public enum UILevelStatus { PAUSED, PLAYING, PLAYER_DEATH, RESTARTING, LOADED_LEVEL }

@@ -26,6 +26,9 @@ namespace JumpMaster.UI
 
             _image = GetComponent<Image>();
             _image.fillAmount = 1f;
+            _image.enabled = false;
+
+            LevelController.Instance.OnLevelStarted += () => _image.enabled = true;
         }
     }
 }

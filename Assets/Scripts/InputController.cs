@@ -31,9 +31,13 @@ namespace JumpMaster.Controls
         {
             Instance = this;
 
+            _inputDetected = false;
+
             _input = new();
             _input.Enable();
         }
+
+        private bool _inputDetected;
 
         private InputActions _input;
 
@@ -67,7 +71,8 @@ namespace JumpMaster.Controls
         {
             if (context.interaction is SlowTapInteraction)
             {
-                if (OnHoldCancelled != null) OnHoldCancelled();
+                if (OnHoldCancelled != null)
+                    OnHoldCancelled();
             }
         }
 
@@ -94,9 +99,7 @@ namespace JumpMaster.Controls
             }
             if (context.interaction is TapInteraction)
             {
-                bool was_paused = LevelController.Paused;
-
-                if (was_paused == false && OnTap != null)
+                if (OnTap != null)
                     OnTap();
             }
         }

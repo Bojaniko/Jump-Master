@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-using JumpMaster.Controls;
 using JumpMaster.LevelControllers;
+using JumpMaster.Controls;
+using JumpMaster.Movement;
 
 namespace JumpMaster.UI
 {
@@ -16,8 +17,6 @@ namespace JumpMaster.UI
         private float _startTime = 0f;
         private float _minHoldTime = 0f;
 
-        private bool _charging = false;
-
         private Color _defaultColor;
         private Color _updateColor;
 
@@ -27,9 +26,21 @@ namespace JumpMaster.UI
         [SerializeField]
         private Sprite _emptyCircle, _fullCircle;
 
+        private ChargedJumpControl _chargedJumpControl;
+        private FloatControl _floatControl;
+
         private void Awake()
         {
             if (MovementController.Instance == null)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
+            _chargedJumpControl = MovementController.Instance.GetControl<ChargedJumpControl>();
+            _floatControl = MovementController.Instance.GetControl<FloatControl>();
+
+            if (_chargedJumpControl == null)
             {
                 gameObject.SetActive(false);
                 return;
@@ -44,14 +55,17 @@ namespace JumpMaster.UI
             _defaultColor = _image.color;
             _updateColor = _defaultColor;
 
-            InputController.Instance.OnHoldStarted += ChargeStart;
-            InputController.Instance.OnHoldPerformed += ChargeEnd;
-            InputController.Instance.OnHoldCancelled += ChargeEnd;
+            LevelController.Instance.OnLevelStarted += () =>
+            {
+                InputController.Instance.OnHoldStarted += ChargeStart;
+                InputController.Instance.OnHoldPerformed += ChargeEnd;
+                InputController.Instance.OnHoldCancelled += ChargeEnd;
+            };
         }
 
         private void Update()
         {
-            if (!_charging)
+            if (!_floatControl.ChargingJump)
                 return;
 
             if (Time.time - _startTime < _minHoldTime)
@@ -72,7 +86,7 @@ namespace JumpMaster.UI
                 _rect.localScale = Vector3.one;
                 _image.sprite = _emptyCircle;
                 _image.color = _defaultColor;
-                _image.fillAmount = Mathf.Clamp((Time.time - _startTime - _minHoldTime) / MovementController.Instance.MaxChargeDuration, 0f, 1f);
+                _image.fillAmount = Mathf.Clamp((Time.time - _startTime - _minHoldTime) / _chargedJumpControl.ControlData.MaxChargeDuration, 0f, 1f);
             }
         }
 
@@ -80,10 +94,9 @@ namespace JumpMaster.UI
         {
             if (LevelController.Paused)
                 return;
-            if (!MovementController.Instance.CanJump)
+            if (!_floatControl.ChargingJump)
                 return;
 
-            _charging = true;
             _startTime = Time.time;
             _minHoldTime = min_hold_time;
             _rect.anchoredPosition = position;
@@ -92,7 +105,6 @@ namespace JumpMaster.UI
         private void ChargeEnd()
         {
             _image.fillAmount = 0f;
-            _charging = false;
         }
     }
 }

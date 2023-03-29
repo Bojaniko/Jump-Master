@@ -1,6 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
+using JumpMaster.Movement;
 
 namespace JumpMaster.LevelControllers
 {
@@ -82,8 +82,8 @@ namespace JumpMaster.LevelControllers
             if (_ascendingSpeed == 0f)
                 return;
 
-            if (MovementController.Instance.StateController.CurrentState.Equals(MovementState.JUMPING) ||
-                MovementController.Instance.StateController.CurrentState.Equals(MovementState.FLOATING))
+            if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMPING) ||
+                MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
             {
                 if (MovementController.Instance.BoundsScreenPosition.max.y > Screen.height - MaxScreenHeightPosition)
                 {
@@ -95,7 +95,7 @@ namespace JumpMaster.LevelControllers
                 }
             }
 
-            if (MovementController.Instance.StateController.CurrentState.Equals(MovementState.FLOATING) != true)
+            if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING) != true)
                 _ascendingHeight += AscendingSpeed * Time.deltaTime;
 
             _cameraPosition = Camera.transform.position;

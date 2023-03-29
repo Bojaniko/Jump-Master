@@ -1,0 +1,18 @@
+{
+    "name": "UIAssembly",
+    "rootNamespace": "",
+    "references": [
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:5f2c2090418cec6408840530e172e004",
+        "GUID:27281bcc26fc9a049a40e4e270f1b79f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

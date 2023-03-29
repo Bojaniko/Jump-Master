@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf752be44d2f884daa6eaafa5e9392b, type: 3}
+  m_Name: Dash Control Data
+  m_EditorClassIdentifier: 
+  Force: 10
+  Distance: 5
+  EndDistancePercentage: 0.95
+  MaxChain: 3
+  ChainPenaltyDuration: 2
+  MinChainDistance: 0.5
+  CrossChainVelocity: 0.5

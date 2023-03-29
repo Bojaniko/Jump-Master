@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bf9e0f56020dde4a9fe610c747a42e1, type: 3}
+  m_Name: Jump Control Data
+  m_EditorClassIdentifier: 
+  Height: 3.5
+  Force: 20
+  EndForce: 0.5
+  ChargedHeight: 10
+  ChargedForce: 50
+  MinChargeDuration: 0.3
+  MaxChargeDuration: 0.6
+  MaxChain: 5
+  ChainPenaltyDuration: 1.5
+  MinChainHeight: 0.75
+  MaxCrossChainDistance: 0.9
+  CrossChainVelocity: 0.5

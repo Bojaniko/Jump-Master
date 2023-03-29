@@ -3,8 +3,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using JumpMaster.Obstacles;
-using JumpMaster.UI;
+using JumpMaster.Controls;
 
 namespace JumpMaster.LevelControllers
 {
@@ -12,7 +11,6 @@ namespace JumpMaster.LevelControllers
     {
         [Range(1f, 10f)]
         public float Gravity = 9.81f;
-        public ObstacleLevelControllerSO ObstacleLevelControllerData;
 
         public static bool Loaded { get; private set; }
         public static bool Started { get; private set; }
@@ -63,9 +61,9 @@ namespace JumpMaster.LevelControllers
 
             Physics.gravity = new Vector3(0, -Gravity, 0);
 
-            PauseButton.OnPause += PauseLevel;
-            ResumeButton.OnResume += ResumeLevel;
-            RestartButton.OnRestart += ResetLevel;
+            //PauseButton.OnPause += PauseLevel;
+            //ResumeButton.OnResume += ResumeLevel;
+            //RestartButton.OnRestart += ResetLevel;
         }
 
         private void LoadedLevel()
@@ -77,14 +75,16 @@ namespace JumpMaster.LevelControllers
             Paused = true;
             Started = false;
 
-            if (MovementController.Instance != null)
-                MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
+            if (InputController.Instance != null)
+                InputController.Instance.OnTap += StartLevel;
 
             ResumeLevel();
         }
 
         private void StartLevel()
         {
+            InputController.Instance.OnTap -= StartLevel;
+
             if (OnLevelStarted != null)
                 OnLevelStarted();
 
@@ -100,8 +100,8 @@ namespace JumpMaster.LevelControllers
             if (OnLevelReset != null)
                 OnLevelReset();
 
-            if (MovementController.Instance != null)
-                MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
+            //if (MovementController.Instance != null)
+            //    MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
         }
 
         private void PauseLevel()
@@ -135,19 +135,6 @@ namespace JumpMaster.LevelControllers
             }
 
             LoadedLevel();
-        }
-
-        private void DetectLevelStart(MovementState state)
-        {
-            if (!state.Equals(MovementState.JUMPING))
-                return;
-
-            if (Started)
-                return;
-
-            StartLevel();
-
-            MovementController.Instance.StateController.OnStateChanged -= DetectLevelStart;
         }
     }
 }
