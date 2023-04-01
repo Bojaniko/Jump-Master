@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-using JumpMaster.LevelControllers;
-
 namespace JumpMaster.UI
 {
     [RequireComponent(typeof(UIMenu))]

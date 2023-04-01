@@ -12,22 +12,26 @@ namespace JumpMaster.LevelControllers
         [Range(1f, 10f)]
         public float Gravity = 9.81f;
 
+        private static bool s_resumed = false;
+
         public static bool Loaded { get; private set; }
         public static bool Started { get; private set; }
+        public static bool Ended { get; private set; }
         public static bool Paused { get; private set; }
         public static float LastPauseStartTime { get; private set; }
         public static float LastPauseEndTime { get; private set; }
         public static float LastPauseDuration { get; private set; }
 
-        private List<ILevelController> _controllers;
+        private List<LevelControllerInitializable> _controllers;
 
         public delegate void LevelActivityEventHandler();
-        public event LevelActivityEventHandler OnLevelStarted;
-        public event LevelActivityEventHandler OnLevelLoaded;
-        public event LevelActivityEventHandler OnLevelResume;
-        public event LevelActivityEventHandler OnLevelPaused;
-        public event LevelActivityEventHandler OnPlayerDeath;
-        public event LevelActivityEventHandler OnLevelReset;
+
+        public static event LevelActivityEventHandler OnLoad;
+        public static event LevelActivityEventHandler OnPause;
+        public static event LevelActivityEventHandler OnResume;
+        public static event LevelActivityEventHandler OnRestart;
+        public static event LevelActivityEventHandler OnEndLevel;
+        public static event LevelActivityEventHandler OnStartLevel;
 
         private static LevelController s_instance;
 
@@ -51,81 +55,112 @@ namespace JumpMaster.LevelControllers
             Instance = this;
 
             Paused = true;
+            Loaded = false;
+            Ended = false;
             Started = false;
 
-            _controllers = new();
-            _controllers.AddRange(FindObjectsOfType<LevelControllerInitializable>());
-            _controllers.AddRange(FindObjectsOfType<LevelControllerInitializablePausable>());
-
-            StartCoroutine(InitializationLoop());
+            StartCoroutine(LevelLoadSequence());
 
             Physics.gravity = new Vector3(0, -Gravity, 0);
-
-            //PauseButton.OnPause += PauseLevel;
-            //ResumeButton.OnResume += ResumeLevel;
-            //RestartButton.OnRestart += ResetLevel;
         }
 
-        private void LoadedLevel()
+        private void LateUpdate()
         {
-            if (OnLevelLoaded != null)
-                OnLevelLoaded();
-
-            Loaded = true;
-            Paused = true;
-            Started = false;
-
-            if (InputController.Instance != null)
-                InputController.Instance.OnTap += StartLevel;
-
-            ResumeLevel();
+            if (s_resumed)
+            {
+                if (OnResume != null)
+                    OnResume();
+                s_resumed = false;
+            }
         }
 
-        private void StartLevel()
+        public static void StartLevel()
         {
-            InputController.Instance.OnTap -= StartLevel;
+            if (!Loaded)
+                return;
 
-            if (OnLevelStarted != null)
-                OnLevelStarted();
+            if (Started)
+                return;
 
             Started = true;
             Paused = false;
+
+            if (OnStartLevel != null)
+                OnStartLevel();
         }
 
-        private void ResetLevel()
+        public static void EndLevel()
         {
+            if (!Loaded)
+                return;
+
+            if (!Started)
+                return;
+
+            if (Ended)
+                return;
+
+            Ended = true;
+
+            if (OnEndLevel != null)
+                OnEndLevel();
+        }
+
+        public static void Restart()
+        {
+            if (!Loaded)
+                return;
+
+            if (!Started)
+                return;
+
             Started = false;
-            Paused = true;
 
-            if (OnLevelReset != null)
-                OnLevelReset();
-
-            //if (MovementController.Instance != null)
-            //    MovementController.Instance.StateController.OnStateChanged += DetectLevelStart;
+            if (OnRestart != null)
+                OnRestart();
         }
 
-        private void PauseLevel()
+        public static void Pause()
         {
-            Paused = true;
+            if (!Loaded)
+                return;
 
-            if (OnLevelPaused != null)
-                OnLevelPaused();
+            if (Paused)
+                return;
 
             LastPauseStartTime = Time.time;
+
+            Paused = true;
+
+            Debug.Log("Pause input");
+
+            if (OnPause != null)
+                OnPause();
         }
 
-        private void ResumeLevel()
+        public static void Resume()
         {
-            if (OnLevelResume != null)
-                OnLevelResume();
+            if (!Loaded)
+                return;
 
-            Paused = false;
+            if (!Paused)
+                return;
+
+            Debug.Log("Resuming");
+
             LastPauseEndTime = Time.time;
             LastPauseDuration = LastPauseEndTime - LastPauseStartTime;
+
+            Paused = false;
+
+            s_resumed = true;
         }
 
-        private IEnumerator InitializationLoop()
+        private IEnumerator LevelLoadSequence()
         {
+            _controllers = new();
+            _controllers.AddRange(FindObjectsOfType<LevelControllerInitializable>());
+
             for (int i = 0; i < _controllers.Count; i++)
             {
                 yield return new WaitUntil(() =>
@@ -134,7 +169,11 @@ namespace JumpMaster.LevelControllers
                 });
             }
 
-            LoadedLevel();
+            Loaded = true;
+            Paused = false;
+
+            if (OnLoad != null)
+                OnLoad();
         }
     }
 }

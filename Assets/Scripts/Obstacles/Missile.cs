@@ -74,12 +74,12 @@ namespace JumpMaster.Obstacles
             _animator.SetFloat("SwirlMult", 0f);
         }
 
-        protected override void Unpause()
+        protected override void Resume()
         {
             
         }
 
-        protected override void PlayerDeath()
+        protected override void EndLevel()
         {
             
         }

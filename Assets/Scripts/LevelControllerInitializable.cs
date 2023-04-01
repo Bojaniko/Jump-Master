@@ -2,7 +2,7 @@ using JumpMaster.Structure;
 
 namespace JumpMaster.LevelControllers
 {
-    public abstract class LevelControllerInitializable : Initializable, ILevelController
+    public abstract class LevelControllerInitializable : Initializable
     {
         public bool ControllerInitialized { get { return Initialized; } }
 

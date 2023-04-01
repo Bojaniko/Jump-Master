@@ -60,6 +60,9 @@ namespace JumpMaster.Movement
                 UpdateDirection(new(ControlArgs.Direction.Vertical, Controller.PreviousControl.ControlArgs.Direction.Horizontal));
 
             PerformChain();
+
+            if (!LevelController.Started)
+                LevelController.StartLevel();
         }
 
         private Vector3 GetVectorDirection(IMovementControl previous_control)
@@ -130,7 +133,8 @@ namespace JumpMaster.Movement
         // Check if the player has tapped the screen as a jump input.
         private void JumpInput()
         {
-            OnInputDetected(this, new(Controller.ControlledRigidbody, MovementDirection.Up));
+            if (OnInputDetected != null)
+                OnInputDetected(this, new(Controller.ControlledRigidbody, MovementDirection.Up));
         }
 
         // Check if the player has performed a charged jump to count it as a jump.

@@ -9,7 +9,7 @@ using JumpMaster.LevelControllers.Obstacles;
 namespace JumpMaster.Obstacles
 {
     [RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(SphereCollider))]
-    public abstract class Obstacle : InitializablePausable
+    public abstract class Obstacle : Initializable
     {
         protected ObstacleSO _data;
         protected ObstacleController _controller;
@@ -110,8 +110,11 @@ namespace JumpMaster.Obstacles
                 _bounds = newBounds.GetComponent<BoxCollider>();
             }
 
-            LevelController.Instance.OnLevelPaused += Pause;
-            LevelController.Instance.OnLevelStarted += Unpause;
+            LevelController.OnPause += Pause;
+            LevelController.OnResume += Resume;
+            LevelController.OnStartLevel += Resume;
+            LevelController.OnEndLevel += EndLevel;
+            LevelController.OnRestart += Restart;
         }
 
         protected abstract void OnUpdate();
@@ -123,10 +126,10 @@ namespace JumpMaster.Obstacles
         protected abstract bool IsDespawnable();
 
         protected abstract override void Initialize();
-        protected abstract override void Pause();
-        protected abstract override void Unpause();
-        protected abstract override void PlayerDeath();
-        protected abstract override void Restart();
+        protected abstract void Pause();
+        protected abstract void Resume();
+        protected abstract void EndLevel();
+        protected abstract void Restart();
 
         public bool BoundsUnderScreen
         {

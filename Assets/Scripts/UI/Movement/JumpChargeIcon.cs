@@ -55,16 +55,16 @@ namespace JumpMaster.UI
             _defaultColor = _image.color;
             _updateColor = _defaultColor;
 
-            LevelController.Instance.OnLevelStarted += () =>
-            {
-                InputController.Instance.OnHoldStarted += ChargeStart;
-                InputController.Instance.OnHoldPerformed += ChargeEnd;
-                InputController.Instance.OnHoldCancelled += ChargeEnd;
-            };
+            InputController.Instance.OnHoldStarted += ChargeStart;
+            InputController.Instance.OnHoldPerformed += ChargeEnd;
+            InputController.Instance.OnHoldCancelled += ChargeEnd;
         }
 
         private void Update()
         {
+            if (LevelController.Paused)
+                return;
+
             if (!_floatControl.ChargingJump)
                 return;
 

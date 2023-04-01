@@ -28,7 +28,7 @@ namespace JumpMaster.UI
             _image.fillAmount = 1f;
             _image.enabled = false;
 
-            LevelController.Instance.OnLevelStarted += () => _image.enabled = true;
+            LevelController.OnStartLevel += () => _image.enabled = true;
         }
     }
 }

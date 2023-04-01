@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace JumpMaster.LevelControllers
 {
-    public class PlayerController : LevelControllerInitializablePausable
+    public class PlayerController : LevelControllerInitializable
     {
         [Range(0f, 20f)]
         public float Z_Position = 3f;
@@ -39,34 +39,12 @@ namespace JumpMaster.LevelControllers
             transform.position = new Vector3(transform.position.x, transform.position.y, Z_Position);
             transform.localScale = Vector3.one * Size;
 
-            Restart();
+            LevelController.OnLoad += EnableDamage;
+            LevelController.OnEndLevel += DisableDamage;
         }
 
-        protected override void Pause()
-        {
-
-        }
-
-        protected override void PlayerDeath()
-        {
-            DamageController.OnDamageLogged -= InputDamage;
-        }
-
-        protected override void Restart()
-        {
-            Health = MaxHealth;
-            DamageController.OnDamageLogged += InputDamage;
-        }
-
-        protected override void Unpause()
-        {
-
-        }
-
-        protected override void LevelLoaded()
-        {
-
-        }
+        private void EnableDamage() { DamageController.OnDamageLogged += InputDamage; }
+        private void DisableDamage() { DamageController.OnDamageLogged -= InputDamage; }
 
         private void InputDamage(DamageInfo info)
         {

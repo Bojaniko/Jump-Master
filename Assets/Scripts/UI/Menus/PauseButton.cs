@@ -6,14 +6,11 @@ namespace JumpMaster.UI
     {
         protected override string ButtonName { get { return "Pause"; } }
 
-        public static event UIMenusEventHandler OnPause;
-
         protected override void DetectTap()
         {
             if (LevelController.Paused)
                 return;
-            if (OnPause != null)
-                OnPause();
+            LevelController.Pause();
         }
     }
 }

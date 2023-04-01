@@ -6,8 +6,6 @@ namespace JumpMaster.UI
     {
         protected override string ButtonName { get { return "Restart"; } }
 
-        public static event UIMenusEventHandler OnRestart;
-
         protected override void DetectTap()
         {
             if (!LevelController.Paused)
@@ -16,8 +14,7 @@ namespace JumpMaster.UI
                 return;
             if (!LevelController.Started)
                 return;
-            if (OnRestart != null)
-                OnRestart();
+            LevelController.Restart();
         }
     }
 }

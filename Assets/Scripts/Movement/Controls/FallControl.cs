@@ -7,6 +7,8 @@ namespace JumpMaster.Movement
 {
     public sealed class FallControl : MovementControl<FallControlDataSO>, IInputableControl
     {
+        private Vector3 _prePauseVelocity;
+
         public FallControl(MovementController controller, FallControlDataSO data) : base(controller, data)
         {
             InputController.Instance.OnHoldCancelled += JumpChargeCancelInput;
@@ -33,10 +35,18 @@ namespace JumpMaster.Movement
 
         public override Vector3 GetCurrentVelocity()
         {
-            return Controller.ControlledRigidbody.velocity;
+            if (_prePauseVelocity.Equals(Vector3.zero))
+                return Controller.ControlledRigidbody.velocity;
+
+            Vector3 velocity = _prePauseVelocity;
+            _prePauseVelocity = Vector3.zero;
+            return velocity;
         }
 
-        public override void Pause() { }
+        public override void Pause()
+        {
+            _prePauseVelocity = -LevelController.Instance.Gravity * Vector3.up;
+        }
 
         public override void Resume() { }
 
@@ -48,7 +58,8 @@ namespace JumpMaster.Movement
                 && !Controller.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING))
                 return;
 
-            OnInputDetected(this, ControlArgs);
+            if (OnInputDetected != null)
+                OnInputDetected(this, ControlArgs);
         }
     }
 }

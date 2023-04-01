@@ -30,7 +30,7 @@ namespace JumpMaster.UI
 
     public delegate void MissileWarningEventHandler();
 
-    public class MissileWarning : InitializablePausable
+    public class MissileWarning : Initializable
     {
         public event MissileWarningEventHandler OnWarningEnded;
 
@@ -117,28 +117,14 @@ namespace JumpMaster.UI
 
             _countdownStartTime = Time.time;
 
+            LevelController.OnResume += Resume;
+            LevelController.OnEndLevel += EndLevel;
+
             StartCoroutine(Action());
         }
 
-        protected override void Pause()
-        {
-            
-        }
-
-        protected override void Unpause()
-        {
-            _countdownStartTime += LevelController.LastPauseDuration;
-        }
-
-        protected override void PlayerDeath()
-        {
-            Restart();
-        }
-
-        protected override void Restart()
-        {
-            Destroy(gameObject);
-        }
+        private void Resume() { _countdownStartTime += LevelController.LastPauseDuration; }
+        private void EndLevel() { Destroy(gameObject); }
 
         private void Update()
         {
@@ -170,6 +156,12 @@ namespace JumpMaster.UI
             yield return new WaitForSecondsPausable(_flashInterval);
 
             yield return Action();
+        }
+
+        private void OnDestroy()
+        {
+            LevelController.OnResume -= Resume;
+            LevelController.OnEndLevel -= EndLevel;
         }
     }
 }

@@ -68,8 +68,6 @@ namespace JumpMaster.Movement
             if (Chain >= ControlData.MaxChain)
                 return false;
 
-            Debug.Log("Starting dash.");
-
             return true;
         }
         protected override void StartControl()

@@ -9,7 +9,7 @@ namespace JumpMaster.Movement
 {
     public enum MovementState { STILL, JUMPING, JUMP_CHARGING, DASHING, HANGING, FLOATING, FALLING };
 
-    public class MovementController : LevelControllerInitializablePausable
+    public class MovementController : LevelControllerInitializable
     {
         public MovementControllerDataSO MovementControllerData;
 
@@ -49,30 +49,34 @@ namespace JumpMaster.Movement
 
             _inputEnabled = false;
 
+            LevelController.OnPause += Pause;
+            LevelController.OnEndLevel += Pause;
+
+            LevelController.OnLoad += Resume;
+            LevelController.OnResume += Resume;
+
+            LevelController.OnRestart += Restart;
+
             Restart();
         }
 
         // ##### GAME STATE #####
 
-        protected override void Pause()
+        private void Pause()
         {
             ControlledRigidbody.constraints = RigidbodyConstraints.FreezeAll;
 
             DisableInput();
             PauseControls();
         }
-        protected override void Unpause()
+        private void Resume()
         {
             ControlledRigidbody.constraints = RigidbodyConstraints.None;
 
             EnableInput();
             UnpauseControls();
         }
-        protected override void PlayerDeath()
-        {
-            DisableInput();
-        }
-        protected override void Restart()
+        private void Restart()
         {
             RegisterControls();
             ResetPlayerPosition();
@@ -80,10 +84,6 @@ namespace JumpMaster.Movement
 
             IMovementControl still_control = GetControl<StillControl>();
             StartControl(still_control, new(ControlledRigidbody));
-        }
-        protected override void LevelLoaded()
-        {
-            EnableInput();
         }
 
         public IMovementControl PreviousControl { get; private set; }
@@ -117,6 +117,9 @@ namespace JumpMaster.Movement
 
         private void TryStartInputControl(IMovementControl control, MovementControlArgs start_args)
         {
+            if (LevelController.Paused)
+                return;
+
             TryStartControl(control, start_args);
         }
 

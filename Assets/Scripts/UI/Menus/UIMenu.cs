@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-using JumpMaster.LevelControllers;
-
 namespace JumpMaster.UI
 {
     [RequireComponent(typeof(UIDocument))]

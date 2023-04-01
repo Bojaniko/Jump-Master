@@ -9,9 +9,9 @@ using JumpMaster.LevelControllers;
 namespace JumpMaster.UI
 {
     public delegate void UIMenusEventHandler();
-    public enum UILevelStatus { PAUSED, PLAYING, PLAYER_DEATH, RESTARTING, LOADED_LEVEL }
+    public enum UILevelStatus { PAUSED, PLAYING, ENDED }
 
-    public class UIController : LevelControllerInitializablePausable
+    public class UIController : LevelControllerInitializable
     {
         private static UIController s_instance;
 
@@ -35,6 +35,16 @@ namespace JumpMaster.UI
             if (s_instance != null)
                 return;
             s_instance = this;
+
+            LevelController.OnPause += () => { ActivateRegisteredMenus(UILevelStatus.PAUSED); };
+
+            LevelController.OnResume += () => { ActivateRegisteredMenus(UILevelStatus.PLAYING); };
+
+            LevelController.OnEndLevel += () => { ActivateRegisteredMenus(UILevelStatus.ENDED); };
+
+            LevelController.OnRestart += () => { ActivateRegisteredMenus(UILevelStatus.PLAYING); };
+
+            LevelController.OnLoad += () => { ActivateRegisteredMenus(UILevelStatus.PLAYING); };
         }
 
         private void ActivateRegisteredButtons(UIMenu menu)
@@ -54,31 +64,6 @@ namespace JumpMaster.UI
                     ActivateRegisteredButtons(menu);
                 }
             }
-        }
-
-        protected override void Pause()
-        {
-            ActivateRegisteredMenus(UILevelStatus.PAUSED);
-        }
-
-        protected override void PlayerDeath()
-        {
-            ActivateRegisteredMenus(UILevelStatus.PLAYER_DEATH);
-        }
-
-        protected override void Restart()
-        {
-            ActivateRegisteredMenus(UILevelStatus.RESTARTING);
-        }
-
-        protected override void Unpause()
-        {
-            ActivateRegisteredMenus(UILevelStatus.PLAYING);
-        }
-
-        protected override void LevelLoaded()
-        {
-            ActivateRegisteredMenus(UILevelStatus.LOADED_LEVEL);
         }
     }
 }

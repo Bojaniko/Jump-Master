@@ -4,7 +4,7 @@ using JumpMaster.Movement;
 
 namespace JumpMaster.LevelControllers
 {
-    public class CameraController : LevelControllerInitializablePausable
+    public class CameraController : LevelControllerInitializable
     {
         private static CameraController s_instance;
 
@@ -27,35 +27,31 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
-            LevelController.Instance.OnLevelStarted += StartRise;
+            LevelController.OnStartLevel += StartRise;
+
+            LevelController.OnPause += Pause;
+            LevelController.OnResume += Resume;
+
+            LevelController.OnRestart += Restart;
+            LevelController.OnLoad += Restart;
         }
 
-        protected override void Pause()
+        private void Pause()
         {
             _ascendingSpeed = 0f;
         }
 
-        protected override void Unpause()
+        private void Resume()
         {
             _ascendingSpeed = AscendingSpeed;
         }
 
-        protected override void PlayerDeath()
-        {
-            
-        }
-
-        protected override void Restart()
+        private void Restart()
         {
             _cameraPosition = Camera.transform.position;
             _cameraPosition.y -= _ascendingHeight - _ascendingStartHeight;
 
             _ascendingHeight = 0f;
-        }
-
-        protected override void LevelLoaded()
-        {
-
         }
 
         public Camera Camera;

@@ -3,12 +3,12 @@
     "maps": [
         {
             "name": "UI",
-            "id": "e50e73b9-0cd6-4aa3-86ce-292b5de062ee",
+            "id": "f0bcebc8-1e6a-489f-94c4-2c869777f8cd",
             "actions": [
                 {
                     "name": "Touch",
                     "type": "PassThrough",
-                    "id": "c3d39190-b814-46bb-b8b6-3ce5a1d15b0a",
+                    "id": "59146b80-66a7-4fd3-9f9b-68794088e272",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -17,7 +17,7 @@
                 {
                     "name": "Position",
                     "type": "PassThrough",
-                    "id": "2ff26d15-2b3d-4359-9b56-1696a0f76b27",
+                    "id": "1e8c2c67-11b5-48a5-8784-2e15bac9eaeb",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -27,7 +27,7 @@
             "bindings": [
                 {
                     "name": "",
-                    "id": "29949562-2e55-4307-926b-23666f72c6d2",
+                    "id": "5ff7c9c8-34e3-468c-8301-0e1a84697779",
                     "path": "<Touchscreen>/touch*/Press",
                     "interactions": "",
                     "processors": "",
@@ -38,7 +38,7 @@
                 },
                 {
                     "name": "",
-                    "id": "d7c9839f-547c-4012-9133-b047ff44f132",
+                    "id": "ff3119b0-2b43-4f3b-b47d-76e507c4a815",
                     "path": "<Touchscreen>/primaryTouch/position",
                     "interactions": "",
                     "processors": "",
@@ -50,7 +50,7 @@
             ]
         },
         {
-            "name": "Touch",
+            "name": "Movement",
             "id": "348cdfb2-301c-4f0e-960f-762efbd70581",
             "actions": [
                 {
@@ -78,7 +78,7 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": true
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [

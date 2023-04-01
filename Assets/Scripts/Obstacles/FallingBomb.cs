@@ -178,12 +178,12 @@ namespace JumpMaster.Obstacles
             _animator.SetFloat("Speed", 0f);
         }
 
-        protected override void Unpause()
+        protected override void Resume()
         {
             _animator.SetFloat("Speed", 1f);
         }
 
-        protected override void PlayerDeath()
+        protected override void EndLevel()
         {
             _explodeCoroutine = StartCoroutine("Explode");
         }

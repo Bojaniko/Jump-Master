@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace JumpMaster.LevelControllers
 {
-    public class ScoreController : LevelControllerInitializablePausable
+    public class ScoreController : LevelControllerInitializable
     {
         private float _startHeight;
 
@@ -31,32 +29,13 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
+            LevelController.OnRestart += ResetScore;
+        }
+
+        private void ResetScore()
+        {
+            Score = 0;
             _startHeight = PlayerController.Instance.transform.position.y;
-        }
-
-        protected override void Pause()
-        {
-
-        }
-
-        protected override void Unpause()
-        {
-
-        }
-
-        protected override void PlayerDeath()
-        {
-
-        }
-
-        protected override void Restart()
-        {
-            _startHeight = PlayerController.Instance.transform.position.y;
-        }
-
-        protected override void LevelLoaded()
-        {
-
         }
 
         private void Update()

@@ -1,5 +1,6 @@
-using UnityEngine;
+using System.Collections.Generic;
 
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 
@@ -31,40 +32,68 @@ namespace JumpMaster.Controls
         {
             Instance = this;
 
-            _inputDetected = false;
-
             _input = new();
             _input.Enable();
         }
 
-        private bool _inputDetected;
-
         private InputActions _input;
 
-        public delegate void SwipeEventHandler(Vector2 position, float time);
-        public event SwipeEventHandler OnTouchStart;
-        public event SwipeEventHandler OnTouchEnd;
+        private delegate void InputQueueHandler(InputAction.CallbackContext context);
 
-        public delegate void HoldEventHandler();
-        public event HoldEventHandler OnHoldPerformed;
+        private bool m_detectedInput;
+        private Dictionary<InputQueueHandler, InputAction.CallbackContext> m_inputCallbacks;
 
-        public delegate void HoldStartEventhandler(Vector2 position, float min_hold_duration);
-        public event HoldStartEventhandler OnHoldStarted;
-
-        public delegate void HoldCancelEventHandler();
-        public event HoldCancelEventHandler OnHoldCancelled;
-
-        public delegate void TapEventHandler();
-        public event TapEventHandler OnTap;
-
-        private void Start()
+        private void Update()
         {
-            _input.Touch.Contact.performed += ctx => StartTouchPrimary(ctx);
-            _input.Touch.Contact.canceled += ctx => EndTouchPrimary(ctx);
+            if (!m_detectedInput)
+                return;
 
-            _input.Touch.Touch.performed += ctx => Touch(ctx);
-            _input.Touch.Touch.started += ctx => HoldStart(ctx);
-            _input.Touch.Touch.canceled += ctx => HoldCancel(ctx);
+            ProcessAllInputCallbacks();
+
+            m_detectedInput = false;
+        }
+
+        private void OnEnable()
+        {
+            m_detectedInput = false;
+
+            m_inputCallbacks = new();
+
+            RegisterAllInputCallbacks();
+        }
+
+        private void OnDisable()
+        {
+            m_inputCallbacks.Clear();
+            m_inputCallbacks = null;
+        }
+
+        private void ProcessAllInputCallbacks()
+        {
+            InputAction.CallbackContext context;
+            foreach (InputQueueHandler callback in m_inputCallbacks.Keys)
+            {
+                if (m_inputCallbacks.TryGetValue(callback, out context))
+                    callback.Invoke(context);
+            }
+            m_inputCallbacks.Clear();
+        }
+
+        private void RegisterAllInputCallbacks()
+        {
+            _input.Movement.Contact.performed += ctx => RegisterInputCallback(StartTouch, ctx);
+            _input.Movement.Contact.canceled += ctx => RegisterInputCallback(EndTouch, ctx);
+
+            _input.Movement.Touch.performed += ctx => RegisterInputCallback(Touch, ctx);
+            _input.Movement.Touch.started += ctx => RegisterInputCallback(HoldStart, ctx);
+            _input.Movement.Touch.canceled += ctx => RegisterInputCallback(HoldCancel, ctx);
+        }
+
+        private void RegisterInputCallback(InputQueueHandler callback_delegate, InputAction.CallbackContext callback_context)
+        {
+            if (!m_inputCallbacks.TryAdd(callback_delegate, callback_context))
+                return;
+            m_detectedInput = true;
         }
 
         private void HoldCancel(InputAction.CallbackContext context)
@@ -83,7 +112,7 @@ namespace JumpMaster.Controls
                 if (OnHoldStarted != null)
                 {
                     SlowTapInteraction interaction = context.interaction as SlowTapInteraction;
-                    OnHoldStarted(_input.Touch.Position.ReadValue<Vector2>(), interaction.duration);
+                    OnHoldStarted(_input.Movement.Position.ReadValue<Vector2>(), interaction.duration);
                 }
             }
         }
@@ -104,20 +133,34 @@ namespace JumpMaster.Controls
             }
         }
 
-        private void StartTouchPrimary(InputAction.CallbackContext context)
+        private void StartTouch(InputAction.CallbackContext context)
         {
             if (OnTouchStart != null)
             {
-                OnTouchStart(_input.Touch.Position.ReadValue<Vector2>(), (float)context.startTime);
+                OnTouchStart(_input.Movement.Position.ReadValue<Vector2>(), (float)context.startTime);
             }
         }
 
-        private void EndTouchPrimary(InputAction.CallbackContext context)
+        private void EndTouch(InputAction.CallbackContext context)
         {
             if (OnTouchEnd != null)
-            {
-                OnTouchEnd(_input.Touch.Position.ReadValue<Vector2>(), (float)context.time);
-            }
+                OnTouchEnd(_input.Movement.Position.ReadValue<Vector2>(), (float)context.time);
         }
+
+        public delegate void SwipeEventHandler(Vector2 position, float time);
+        public event SwipeEventHandler OnTouchStart;
+        public event SwipeEventHandler OnTouchEnd;
+
+        public delegate void HoldEventHandler();
+        public event HoldEventHandler OnHoldPerformed;
+
+        public delegate void HoldStartEventhandler(Vector2 position, float min_hold_duration);
+        public event HoldStartEventhandler OnHoldStarted;
+
+        public delegate void HoldCancelEventHandler();
+        public event HoldCancelEventHandler OnHoldCancelled;
+
+        public delegate void TapEventHandler();
+        public event TapEventHandler OnTap;
     }
 }

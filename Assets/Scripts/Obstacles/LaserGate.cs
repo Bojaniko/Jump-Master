@@ -242,12 +242,12 @@ namespace JumpMaster.Obstacles
             
         }
 
-        protected override void Unpause()
+        protected override void Resume()
         {
             
         }
 
-        protected override void PlayerDeath()
+        protected override void EndLevel()
         {
             
         }

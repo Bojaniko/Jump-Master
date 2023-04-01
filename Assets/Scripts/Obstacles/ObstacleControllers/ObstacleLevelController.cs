@@ -7,7 +7,7 @@ using JumpMaster.Obstacles;
 
 namespace JumpMaster.LevelControllers.Obstacles
 {
-    public class ObstacleLevelController : LevelControllerInitializablePausable
+    public class ObstacleLevelController : LevelControllerInitializable
     {
         public ObstacleLevelControllerSO ObstacleLevelControllerData;
 
@@ -73,31 +73,6 @@ namespace JumpMaster.LevelControllers.Obstacles
             _spawnCheckInterval = _data.SpawnCheckInterval / 1000f;
 
             InitializeControllers();
-        }
-
-        protected override void Pause()
-        {
-
-        }
-
-        protected override void Unpause()
-        {
-
-        }
-
-        protected override void PlayerDeath()
-        {
-
-        }
-
-        protected override void Restart()
-        {
-
-        }
-
-        protected override void LevelLoaded()
-        {
-
         }
 
         public delegate void SpawnLoopEventHandler();
