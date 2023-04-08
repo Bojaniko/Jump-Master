@@ -1,6 +1,6 @@
 namespace JumpMaster.Movement
 {
-    public delegate void TransitionableControlEventHandler(IMovementControl control, MovementControlArgs args);
+    public delegate void TransitionableControlEventHandler(IMovementControl transition_to_control, MovementControlArgs args);
 
     public interface ITransitionable
     {

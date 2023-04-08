@@ -1,8 +1,9 @@
 using UnityEngine;
 
 using JumpMaster.Movement;
+using JumpMaster.LevelControllers;
 
-namespace JumpMaster.LevelControllers
+namespace JumpMaster.CameraControls
 {
     public class CameraController : LevelControllerInitializable
     {
@@ -27,35 +28,21 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
-            LevelController.OnStartLevel += StartRise;
-
-            LevelController.OnPause += Pause;
-            LevelController.OnResume += Resume;
+            Restart();
 
             LevelController.OnRestart += Restart;
-            LevelController.OnLoad += Restart;
-        }
-
-        private void Pause()
-        {
-            _ascendingSpeed = 0f;
-        }
-
-        private void Resume()
-        {
-            _ascendingSpeed = AscendingSpeed;
         }
 
         private void Restart()
         {
-            _cameraPosition = Camera.transform.position;
-            _cameraPosition.y -= _ascendingHeight - _ascendingStartHeight;
+            Camera.main.transform.position = new Vector3(0, 0, ZPosition);
 
-            _ascendingHeight = 0f;
+            _currentHeight = 0f;
+            _startHeight = 0f;
+            _speed = AscendingSpeed;
         }
 
-        public Camera Camera;
-
+        public float ZPosition = -15f;
         [Range(0.1f, 10f)]
         public float AscendingSpeed = 0.6f;
         [Range(50, 500)]
@@ -65,45 +52,57 @@ namespace JumpMaster.LevelControllers
         [Range(1f, 10f)]
         public float ReachEdgeSpeed = 2f;
 
-        private float _ascendingSpeed = 0f;
-        private float _ascendingHeight = 0f;
-        private float _ascendingStartHeight = 0f;
+        private float _speed;
+        private float _startHeight;
+        private float _currentHeight;
 
-        private Vector3 _cameraPosition;
-
-        private void Update()
+        private void FixedUpdate()
         {
             if (!LevelController.Started)
                 return;
-            if (_ascendingSpeed == 0f)
+
+            if (LevelController.Paused)
                 return;
+
+            if (_speed == 0f)
+                return;
+
+            ProcessHeightPosition(ref _currentHeight);
+
+            Camera.main.transform.position = GetCurrentHeightPosition(_startHeight, _currentHeight);
+        }
+
+        private void ProcessHeightPosition(ref float current_height)
+        {
+            float height_step = _speed * Time.deltaTime;
 
             if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMPING) ||
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING) ||
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
             {
-                if (MovementController.Instance.BoundsScreenPosition.max.y > Screen.height - MaxScreenHeightPosition)
-                {
-                    float playerHeightDifference = PlayerController.Instance.GetComponent<Collider>().bounds.max.y -
-                        Camera.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
-                        Vector3.Distance(Camera.transform.position, PlayerController.Instance.transform.position))).y;
+                if (MovementController.Instance.BoundsScreenPosition.max.y < Screen.height - MaxScreenHeightPosition)
+                    goto FloatCheck;
 
-                    _ascendingHeight += playerHeightDifference * ReachEdgeSpeed * Time.deltaTime;
-                }
+                float playerHeightDifference = MovementController.Instance.Bounds.bounds.max.y -
+                    Camera.main.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
+                    Vector3.Distance(Camera.main.transform.position, MovementController.Instance.transform.position))).y;
+
+                height_step = playerHeightDifference * ReachEdgeSpeed * Time.deltaTime;
             }
 
-            if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING) != true)
-                _ascendingHeight += AscendingSpeed * Time.deltaTime;
+            FloatCheck:
+            if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
+                height_step = 0;
 
-            _cameraPosition = Camera.transform.position;
-            _cameraPosition.y = _ascendingStartHeight + _ascendingHeight;
-
-            Camera.transform.position = _cameraPosition;
+            current_height += height_step;
         }
 
-        private void StartRise()
+        private Vector3 GetCurrentHeightPosition(float start_height, float current_height)
         {
-            _ascendingStartHeight = Camera.transform.position.y;
+            Vector3 camera_position = Camera.main.transform.position;
+            camera_position.y = start_height + current_height;
+
+            return camera_position;
         }
     }
 }

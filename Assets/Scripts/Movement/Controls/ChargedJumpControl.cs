@@ -92,7 +92,7 @@ namespace JumpMaster.Movement
 
         private void PerformJumpCharge()
         {
-            if (!MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
+            if (!Controller.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
                 return;
 
             float duration_percentage = (Time.time - _chargeStartTime) / ControlData.MaxChargeDuration;

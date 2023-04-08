@@ -1,11 +1,10 @@
 {
-    "name": "CoreAssembly",
-    "rootNamespace": "",
+    "name": "LevelTrackers",
+    "rootNamespace": "JumpMaster.LevelTrackers",
     "references": [
-        "GUID:4099e5319e98558428028d54bc62664e",
-        "GUID:996382cd14154894c8a452523295de56",
-        "GUID:75469ad4d38634e559750d17036d5f7c",
-        "GUID:d8b63aba1907145bea998dd612889d6b"
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:238a5ad73c365134b9d9815d5291767d",
+        "GUID:5f2c2090418cec6408840530e172e004"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

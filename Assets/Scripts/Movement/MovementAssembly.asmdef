@@ -2,8 +2,7 @@
     "name": "MovementAssembly",
     "rootNamespace": "JumpMaster.Movement",
     "references": [
-        "GUID:fb96ca16922018046a9afe18cd20441a",
-        "GUID:27281bcc26fc9a049a40e4e270f1b79f"
+        "GUID:fb96ca16922018046a9afe18cd20441a"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

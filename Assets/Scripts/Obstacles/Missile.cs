@@ -5,6 +5,7 @@ using UnityEngine;
 using Studio28.SFX;
 
 using JumpMaster.SFX;
+using JumpMaster.Movement;
 using JumpMaster.LevelControllers;
 using JumpMaster.LevelControllers.Obstacles;
 using JumpMaster.UI;
@@ -175,7 +176,7 @@ namespace JumpMaster.Obstacles
 
         private void EndWarning()
         {
-            Vector3 position_world = CameraController.Instance.Camera.ScreenToWorldPoint(_spawnController.SpawnArgs.ScreenPosition);
+            Vector3 position_world = Camera.main.ScreenToWorldPoint(_spawnController.SpawnArgs.ScreenPosition);
             switch (_spawnController.SpawnArgs.Direction)
             {
                 case MissileDirection.UP:
@@ -233,7 +234,7 @@ namespace JumpMaster.Obstacles
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.Equals(PlayerController.Instance))
+            if (other.gameObject.Equals(MovementController.Instance))
             {
                 _explodeCoroutine = StartCoroutine("Explode");
             }

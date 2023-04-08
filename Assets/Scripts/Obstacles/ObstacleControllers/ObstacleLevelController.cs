@@ -73,6 +73,9 @@ namespace JumpMaster.LevelControllers.Obstacles
             _spawnCheckInterval = _data.SpawnCheckInterval / 1000f;
 
             InitializeControllers();
+
+            LevelController.OnStartLevel += StartControllers;
+            LevelController.OnEndLevel += EndControllers;
         }
 
         public delegate void SpawnLoopEventHandler();
@@ -134,6 +137,22 @@ namespace JumpMaster.LevelControllers.Obstacles
                 }
                 return _activeObstaclesInTop.ToArray();
             }
+        }
+
+        private void StartControllers()
+        {
+            if (_controllersCoroutine != null)
+                return;
+
+            _controllersCoroutine = StartCoroutine(ControllersLoop());
+        }
+
+        private void EndControllers()
+        {
+            if (_controllersCoroutine == null)
+                return;
+
+            StopCoroutine(_controllersCoroutine);
         }
 
         private IEnumerator ControllersLoop()

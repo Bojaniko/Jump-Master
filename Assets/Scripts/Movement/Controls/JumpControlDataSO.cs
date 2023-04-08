@@ -14,7 +14,7 @@ namespace JumpMaster.Movement
         public float EndForce = 0.5f;
 
         [Header("Chain")]
-        [Range(1, 10)]
+        [Range(1, 50)]
         public int MaxChain = 3;
         [Range(0.5f, 10f)]
         public float ChainPenaltyDuration = 1.5f;

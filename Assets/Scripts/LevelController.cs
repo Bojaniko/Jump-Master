@@ -114,6 +114,7 @@ namespace JumpMaster.LevelControllers
             if (!Started)
                 return;
 
+            Paused = false;
             Started = false;
 
             if (OnRestart != null)
@@ -131,8 +132,6 @@ namespace JumpMaster.LevelControllers
             LastPauseStartTime = Time.time;
 
             Paused = true;
-
-            Debug.Log("Pause input");
 
             if (OnPause != null)
                 OnPause();

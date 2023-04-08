@@ -1,6 +1,9 @@
 using UnityEngine;
 
-namespace JumpMaster.LevelControllers
+using JumpMaster.Movement;
+using JumpMaster.LevelControllers;
+
+namespace JumpMaster.LevelTrackers
 {
     public class ScoreController : LevelControllerInitializable
     {
@@ -29,18 +32,22 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
+            ResetScore();
             LevelController.OnRestart += ResetScore;
         }
 
         private void ResetScore()
         {
             Score = 0;
-            _startHeight = PlayerController.Instance.transform.position.y;
+            _startHeight = MovementController.Instance.transform.position.y;
         }
 
         private void Update()
         {
-            if (PlayerController.Instance.transform.position.y - _startHeight > Score) Score = PlayerController.Instance.transform.position.y - _startHeight;
+            if (!LevelController.Started)
+                return;
+
+            if (MovementController.Instance.transform.position.y - _startHeight > Score) Score = MovementController.Instance.transform.position.y - _startHeight;
         }
     }
 }

@@ -54,8 +54,7 @@ namespace JumpMaster.Movement
 
         private void JumpChargeCancelInput()
         {
-            if (!Controller.ActiveControl.ActiveState.Equals(MovementState.FALLING)
-                && !Controller.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING))
+            if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
                 return;
 
             if (OnInputDetected != null)

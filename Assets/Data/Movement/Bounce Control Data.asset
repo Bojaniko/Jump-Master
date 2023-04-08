@@ -9,13 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fcf752be44d2f884daa6eaafa5e9392b, type: 3}
-  m_Name: Dash Control Data
+  m_Script: {fileID: 11500000, guid: 6c69c0a593df5ee4b8fe8c7331b997f0, type: 3}
+  m_Name: Bounce Control Data
   m_EditorClassIdentifier: 
-  Force: 10
-  Distance: 7
-  EndDistancePercentage: 0.95
-  MaxChain: 4
-  ChainPenaltyDuration: 2
-  MinChainDistance: 0.2
-  CrossChainVelocity: 0.5
+  BounceForce: 10
+  BounceDistance: 3
+  MinStrengthPercentage: 0.2
+  MinExitDistancePercentage: 0.8

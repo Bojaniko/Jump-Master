@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using JumpMaster.LevelControllers;
-using JumpMaster.Controls;
 
 namespace JumpMaster.Movement
 {
-    public enum MovementState { STILL, JUMPING, JUMP_CHARGING, DASHING, HANGING, FLOATING, FALLING };
+    public enum MovementState { STILL, JUMPING, JUMP_CHARGING, DASHING, HANGING, FLOATING, FALLING, BOUNCING };
 
     public class MovementController : LevelControllerInitializable
     {
@@ -45,9 +44,7 @@ namespace JumpMaster.Movement
 
             ControlledRigidbody = GetComponent<Rigidbody>();
 
-            _bounds = GetComponent<BoxCollider>();
-
-            _inputEnabled = false;
+            Bounds = GetComponent<BoxCollider>();
 
             LevelController.OnPause += Pause;
             LevelController.OnEndLevel += Pause;
@@ -66,18 +63,20 @@ namespace JumpMaster.Movement
         {
             ControlledRigidbody.constraints = RigidbodyConstraints.FreezeAll;
 
-            DisableInput();
             PauseControls();
         }
         private void Resume()
         {
             ControlledRigidbody.constraints = RigidbodyConstraints.None;
 
-            EnableInput();
             UnpauseControls();
         }
         private void Restart()
         {
+            ControlledRigidbody.constraints = RigidbodyConstraints.None;
+
+            TryUnregisterControls();
+
             RegisterControls();
             ResetPlayerPosition();
             BoundsScreenPosition = GetBoundsScreenPosition();
@@ -92,15 +91,17 @@ namespace JumpMaster.Movement
         private List<IMovementControl> _controls;
         public IMovementControl[] Controls { get { return _controls.ToArray(); } }
 
+        public Vector2 ScreenPosition { get; private set; }
         public (Vector2 min, Vector2 max) BoundsScreenPosition { get; private set; }
-        private BoxCollider _bounds;
+        public BoxCollider Bounds { get; private set; }
 
         public Rigidbody ControlledRigidbody { get; private set; }
 
-        private bool _inputEnabled = false;
-
         private void FixedUpdate()
         {
+            if (!LevelController.Started)
+                return;
+
             if (LevelController.Paused)
                 return;
 
@@ -109,6 +110,7 @@ namespace JumpMaster.Movement
 
             ControlledRigidbody.velocity = ActiveControl.GetCurrentVelocity();
 
+            ScreenPosition = Camera.main.WorldToScreenPoint(transform.position);
             BoundsScreenPosition = GetBoundsScreenPosition();
 
             if (OnMovementUpdate != null)
@@ -174,23 +176,24 @@ namespace JumpMaster.Movement
         // Sets the player position to sit on the bottom of the screen.
         private void ResetPlayerPosition()
         {
-            Vector3 startPosition = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, 0f, PlayerController.Instance.Z_Position));
-            startPosition.y += (_bounds.bounds.max.y - _bounds.bounds.min.y) * 0.5f;
+            Vector3 startPosition = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, 0f, MovementControllerData.Z_Position));
+            startPosition.y += (Bounds.bounds.max.y - Bounds.bounds.min.y) * 0.5f;
             transform.position = startPosition;
         }
 
         // Calculates the bounds of the player as screen coordinates.
         private (Vector2 min, Vector2 max) GetBoundsScreenPosition()
         {
-            Vector2 min = Camera.main.WorldToScreenPoint(_bounds.bounds.min);
-            Vector3 max = Camera.main.WorldToScreenPoint(_bounds.bounds.max);
+            Vector2 min = Camera.main.WorldToScreenPoint(Bounds.bounds.min);
+            Vector3 max = Camera.main.WorldToScreenPoint(Bounds.bounds.max);
             return (min, max);
         }
 
         // Register all the different movement controls.
         private void RegisterControls()
         {
-            _controls = new();
+            if (_controls == null)
+                _controls = new();
 
             JumpControl jump_control = new(this, MovementControllerData.JumpControlData);
             DashControl dash_control = new(this, MovementControllerData.DashControlData);
@@ -199,6 +202,7 @@ namespace JumpMaster.Movement
             FloatControl float_control = new(this, MovementControllerData.FloatControlData);
             HangControl hang_control = new(this, MovementControllerData.HangControlData);
             ChargedJumpControl charged_jump_control = new(this, MovementControllerData.ChargedJumpControlData, jump_control);
+            BounceControl bounce_control = new(this, MovementControllerData.BounceControlData);
 
             _controls.Add(jump_control);
             _controls.Add(dash_control);
@@ -207,6 +211,7 @@ namespace JumpMaster.Movement
             _controls.Add(float_control);
             _controls.Add(hang_control);
             _controls.Add(charged_jump_control);
+            _controls.Add(bounce_control);
 
             foreach (IMovementControl control in _controls)
             {
@@ -214,36 +219,28 @@ namespace JumpMaster.Movement
                     explicit_control.OnExplicitDetection += StartControl;
                 if (control is ITransitionable transitionable)
                     transitionable.OnTransitionable += StartControl;
-            }
-        }
-
-        // Enable and disable input detection from inputable controls.
-
-        private void EnableInput()
-        {
-            if (_inputEnabled)
-                return;
-
-            foreach(IMovementControl control in Controls)
-            {
                 if (control is IInputableControl inputable)
                     inputable.OnInputDetected += TryStartInputControl;
             }
-
-            _inputEnabled = true;
         }
-        private void DisableInput()
+
+        private void TryUnregisterControls()
         {
-            if (!_inputEnabled)
+            if (_controls == null || _controls.Count == 0)
                 return;
 
-            foreach (IMovementControl control in Controls)
+            foreach (IMovementControl control in _controls)
             {
+                if (control is IExplicitControl explicit_control)
+                    explicit_control.OnExplicitDetection -= StartControl;
+                if (control is ITransitionable transitionable)
+                    transitionable.OnTransitionable -= StartControl;
                 if (control is IInputableControl inputable)
                     inputable.OnInputDetected -= TryStartInputControl;
             }
 
-            _inputEnabled = false;
+            OnActiveControlChange = null;
+            _controls.Clear();
         }
 
         // Pause and upause controls.

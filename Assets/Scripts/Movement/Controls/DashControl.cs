@@ -75,7 +75,7 @@ namespace JumpMaster.Movement
             Controller.ControlledRigidbody.useGravity = false;
 
             Chain++;
-            _chainPenaltyTime = Time.time;
+            _chainPenaltyTime = ControlArgs.StartTime;
 
             if (OnChainUpdate != null)
                 OnChainUpdate();

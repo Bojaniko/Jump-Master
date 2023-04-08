@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf9e0f56020dde4a9fe610c747a42e1, type: 3}
   m_Name: Jump Control Data
   m_EditorClassIdentifier: 
-  Height: 3.5
+  Height: 6
   Force: 20
   EndForce: 0.5
-  MaxChain: 6
+  MaxChain: 10
   ChainPenaltyDuration: 2.5
   MinChainHeight: 0.75
   MaxCrossChainDistance: 0.9

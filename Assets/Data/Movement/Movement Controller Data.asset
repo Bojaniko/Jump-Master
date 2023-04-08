@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75b59552ecd3e944b88259defb167457, type: 3}
   m_Name: Movement Controller Data
   m_EditorClassIdentifier: 
+  Z_Position: 3
   JumpControlData: {fileID: 11400000, guid: 99ceb8bc4c26d6044afe55e05558810f, type: 2}
   DashControlData: {fileID: 11400000, guid: 58e0215603d4c6443b2e06665108334e, type: 2}
   StillControlData: {fileID: 11400000, guid: 22fb2daca1e80ee43b21f8b6caf695bd, type: 2}
@@ -19,3 +20,4 @@ MonoBehaviour:
   FloatControlData: {fileID: 11400000, guid: a79a2e0ec77b87f4b98a8d07fd47f70c, type: 2}
   HangControlData: {fileID: 11400000, guid: 14d544a293361cf42af3beb28faf118d, type: 2}
   ChargedJumpControlData: {fileID: 11400000, guid: b2ff9ddeab8796740b1c436f0701a958, type: 2}
+  BounceControlData: {fileID: 11400000, guid: 3e796148a4dfbe24398cdad3178f93a8, type: 2}

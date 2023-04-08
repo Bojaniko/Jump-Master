@@ -62,7 +62,7 @@ namespace JumpMaster.Movement
             if (ChargingJump)
                 return;
 
-            if (Time.time - ControlArgs.StartTime - _pauseTime < ControlData.Duration)
+            if (Time.time - ControlArgs.StartTime + _pauseTime < ControlData.Duration)
                 return;
 
             if (OnTransitionable != null)
@@ -99,8 +99,6 @@ namespace JumpMaster.Movement
             if (!LevelController.Started)
                 return;
 
-            if (OnInputDetected != null)
-                OnInputDetected(Controller.GetControlByState(MovementState.FALLING), new(Controller.ControlledRigidbody, MovementDirection.Down));
             ChargingJump = false;
         }
     }

@@ -1,22 +1,18 @@
 using UnityEngine;
 
+using JumpMaster.Movement;
+
 namespace JumpMaster.LevelControllers
 {
+    [RequireComponent(typeof(MovementController))]
     public class PlayerController : LevelControllerInitializable
     {
-        [Range(0f, 20f)]
-        public float Z_Position = 3f;
-        [Range(0f, 2f)]
-        public float Size = 0.2f;
-        public float MaxHealth = 100f;
+        [Range(0f, 2f)] public float Size = 0.2f;
+        [Range(1f, 200f)] public float MaxHealth = 100f;
 
         public float Health { get; private set; }
 
-        public delegate void PlayerEventHandler();
-        public event PlayerEventHandler OnPlayerDeath;
-
         private static PlayerController s_instance;
-
         public static PlayerController Instance
         {
             get
@@ -36,8 +32,9 @@ namespace JumpMaster.LevelControllers
         {
             Instance = this;
 
-            transform.position = new Vector3(transform.position.x, transform.position.y, Z_Position);
             transform.localScale = Vector3.one * Size;
+
+            Health = MaxHealth;
 
             LevelController.OnLoad += EnableDamage;
             LevelController.OnEndLevel += DisableDamage;
@@ -65,8 +62,7 @@ namespace JumpMaster.LevelControllers
                 Health = 0f;
             if (Health == 0f)
             {
-                if (OnPlayerDeath != null)
-                    OnPlayerDeath();
+                LevelController.EndLevel();
             }
         }
     }

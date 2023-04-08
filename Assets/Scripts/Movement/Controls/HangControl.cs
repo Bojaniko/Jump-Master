@@ -57,6 +57,9 @@ namespace JumpMaster.Movement
         public override void Resume() { }
         protected override void OnMovementUpdate()
         {
+            if (Started)
+                return;
+
             if (Controller.ActiveControl.ControlArgs.Direction.Horizontal == 0)
                 return;
 
@@ -72,7 +75,7 @@ namespace JumpMaster.Movement
                     if (Controller.BoundsScreenPosition.min.x >= 0)
                         return;
                 }
-                OnExplicitDetection(this, new(Controller.ControlledRigidbody, new(0, -1)));
+                OnExplicitDetection(this, new(Controller.ControlledRigidbody, MovementDirection.Left));
             }
 
             if (Controller.ActiveControl.ControlArgs.Direction.Horizontal == 1)
@@ -87,7 +90,7 @@ namespace JumpMaster.Movement
                     if (Controller.BoundsScreenPosition.max.x <= Screen.width)
                         return;
                 }
-                OnExplicitDetection(this, new(Controller.ControlledRigidbody, new(0, 1)));
+                OnExplicitDetection(this, new(Controller.ControlledRigidbody, MovementDirection.Right));
             }
         }
 

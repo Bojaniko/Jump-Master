@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 
 using JumpMaster.Structure;
+using JumpMaster.Movement;
 using JumpMaster.LevelControllers;
 using JumpMaster.LevelControllers.Obstacles;
 
@@ -73,7 +74,7 @@ namespace JumpMaster.Obstacles
 
             Vector2 pos_screen_margined = _spawnController.SpawnArgs.ScreenPosition;
             pos_screen_margined.y += (BoundsScreenPosition.max.y - BoundsScreenPosition.min.y);
-            Vector3 pos_world = CameraController.Instance.Camera.ScreenToWorldPoint(pos_screen_margined);
+            Vector3 pos_world = Camera.main.ScreenToWorldPoint(pos_screen_margined);
             pos_world.z = Data.Z_Position;
             transform.position = pos_world;
 
@@ -200,7 +201,7 @@ namespace JumpMaster.Obstacles
         {
             if (_explodeCoroutine == null)
             {
-                if (Vector2.Distance(ScreenPosition, Camera.main.WorldToScreenPoint(PlayerController.Instance.transform.position)) <= _detectionShowDistanceScreen)
+                if (Vector2.Distance(ScreenPosition, Camera.main.WorldToScreenPoint(MovementController.Instance.transform.position)) <= _detectionShowDistanceScreen)
                 {
                     if (_currentDetectionShowTime > 0.0f) ShowDetection();
                 }
