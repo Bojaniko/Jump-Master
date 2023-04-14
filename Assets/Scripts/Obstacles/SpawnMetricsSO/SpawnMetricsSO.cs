@@ -2,18 +2,17 @@ using UnityEngine;
 
 namespace JumpMaster.Obstacles
 {
-    public class SpawnMetricsSO<ObstacleScriptableObject, SpawnScriptableObject> : ScriptableObject
+    public class SpawnMetricsSO<ObstacleScriptableObject, SpawnScriptableObject> : ScriptableObject, ISpawnMetricsSO
         where ObstacleScriptableObject : ObstacleSO
         where SpawnScriptableObject : SpawnSO
     {
-        [Range(1, 100)]
-        public int SpawnAmount = 10;
+        [SerializeField, Range(1,100)] private int _spawnAmount = 10;
+        [SerializeField, Range(1, 20)] private int _maxActiveObstacles = 3;
 
-        [Range(1, 20)]
-        public int MaxActiveObstacles = 3;
+        public int SpawnAmount => _spawnAmount;
+        public int MaxActiveObstacles => _maxActiveObstacles;
 
         public ObstacleScriptableObject Data;
-
         public SpawnScriptableObject[] SpawnData;
 
         public SpawnScriptableObject GetRandomSpawnData()

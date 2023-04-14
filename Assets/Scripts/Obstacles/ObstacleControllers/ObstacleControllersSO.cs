@@ -1,8 +1,6 @@
 using UnityEngine;
 
-using JumpMaster.Obstacles;
-
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
     public enum ObstacleControllerType { FallingBomb, LaserGate, Missile }
 

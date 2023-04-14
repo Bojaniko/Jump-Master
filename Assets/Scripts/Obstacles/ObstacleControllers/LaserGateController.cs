@@ -1,31 +1,20 @@
-using System.Collections;
-
 using UnityEngine;
 
-using JumpMaster.Obstacles;
-
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
-    public class LaserGateController : ObstacleController, IObstacleController<LaserGate, LaserGateSO, LaserGateSpawnSO, LaserGateSpawnMetricsSO, LaserGateSpawnArgs>
+    public class LaserGateController : ObstacleController<LaserGate, LaserGateSO, LaserGateSpawnSO, LaserGateSpawnMetricsSO, LaserGateSpawnArgs>
     {
-        private ObstacleControllerData<LaserGate, LaserGateSO, LaserGateSpawnSO, LaserGateSpawnMetricsSO, LaserGateSpawnArgs> _data;
-        public ObstacleControllerData<LaserGate, LaserGateSO, LaserGateSpawnSO, LaserGateSpawnMetricsSO, LaserGateSpawnArgs> ControllerData { get { return _data; } }
-
-        private LaserGate _firstSpawn;
-
         private float _lastSpawnTime = 0f;
 
-        protected override void Spawn()
+        protected override LaserGateSpawnArgs GenerateSpawnArguments()
         {
-            Vector3 screen_position = new Vector3(Screen.width * 0.5f, Screen.height, _data.ObstacleData.Z_Position);
-            LaserGateSpawnArgs spawn_args = new(screen_position, Camera.main.ScreenToWorldPoint(screen_position));
-
-            _data.SpawnFromPool(_data.SpawnMetrics.GetRandomSpawnData(), spawn_args);
+            Vector3 screen_position = new Vector3(Screen.width * 0.5f, Screen.height, ObstacleData.Z_Position);
+            return new(screen_position, Camera.main.ScreenToWorldPoint(screen_position));
         }
 
         protected override bool CanSpawn()
         {
-            if (Time.time - _lastSpawnTime >= _data.SpawnMetrics.Interval)
+            if (Time.time - _lastSpawnTime >= _spawnMetrics.Interval)
             {
                 _lastSpawnTime = Time.time;
                 if (ObstacleLevelController.Instance.ActiveObstaclesInTopSpawnMargin.Length == 0)
@@ -35,9 +24,9 @@ namespace JumpMaster.LevelControllers.Obstacles
             return false;
         }
 
-        public LaserGateController(LaserGateSpawnMetricsSO default_spawn_metrics)
+        public LaserGateController(LaserGateSpawnMetricsSO default_spawn_metrics) : base(default_spawn_metrics)
         {
-            _data = new(default_spawn_metrics, this);
+
         }
     }
 }

@@ -7,7 +7,6 @@ using Studio28.SFX;
 using JumpMaster.SFX;
 using JumpMaster.Movement;
 using JumpMaster.LevelControllers;
-using JumpMaster.LevelControllers.Obstacles;
 using JumpMaster.UI;
 
 namespace JumpMaster.Obstacles
@@ -23,71 +22,29 @@ namespace JumpMaster.Obstacles
         }
     }
 
-    public class Missile : Obstacle, ISpawnable<Missile, MissileSpawnSO, MissileSpawnArgs>, IObstacle<MissileSO, MissileController>
+    public class Missile : Obstacle<MissileSO, MissileController, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs>
     {
         private Vector3 _direction;
         private Coroutine _explodeCoroutine;
         private MissileWarning _warning;
-
-        private ObstacleSpawnController<Missile, MissileSpawnSO, MissileSpawnArgs, ISpawnable<Missile, MissileSpawnSO, MissileSpawnArgs>> _spawnController;
-        public ObstacleSpawnController<Missile, MissileSpawnSO, MissileSpawnArgs, ISpawnable<Missile, MissileSpawnSO, MissileSpawnArgs>> SpawnController
-        {
-            get
-            {
-                return _spawnController;
-            }
-        }
-        public MissileSO Data
-        {
-            get
-            {
-                return _data as MissileSO;
-            }
-        }
-        public MissileController Controller
-        {
-            get
-            {
-                return _controller as MissileController;
-            }
-        }
-        public Missile ObstacleSelf
-        {
-            get
-            {
-                return this;
-            }
-        }
 
         public delegate void ExplosionEventHandler();
         public event ExplosionEventHandler OnExplode;
 
         protected override void Initialize()
         {
-            _spawnController = new(this, this);
-            _spawnController.OnSpawn += Spawn;
-            _spawnController.OnDespawn += Despawn;
+            LevelController.OnPause += Pause;
         }
 
-        protected override void Pause()
+        private void Pause()
         {
-            _rigidbody.velocity = Vector3.zero;
-            _animator.SetFloat("SwirlMult", 0f);
+            c_rigidbody.velocity = Vector3.zero;
+            c_animator.SetFloat("SwirlMult", 0f);
         }
 
-        protected override void Resume()
+        protected override void RestartInstructions()
         {
-            
-        }
 
-        protected override void EndLevel()
-        {
-            
-        }
-
-        protected override void Restart()
-        {
-            _spawnController.Despawn();
         }
 
         protected override void OnUpdate()
@@ -95,15 +52,15 @@ namespace JumpMaster.Obstacles
             
         }
 
-        protected override void Spawn()
+        protected override void SpawnInstructions()
         {
-            switch (_spawnController.SpawnArgs.Direction)
+            switch (SpawnArgs.Direction)
             {
                 case MissileDirection.UP:
                     _direction = Vector3.up;
 
                     transform.rotation = Quaternion.Euler(0, 0, 180f);
-                    _bounds.transform.rotation = Quaternion.identity;
+                    c_bounds.transform.rotation = Quaternion.identity;
                     break;
 
                 case MissileDirection.DOWN:
@@ -112,50 +69,45 @@ namespace JumpMaster.Obstacles
                     // Default model rotation is down, so the rotation is 0 degrees in all angles
 
                     transform.rotation = Quaternion.identity;
-                    _bounds.transform.rotation = Quaternion.identity;
+                    c_bounds.transform.rotation = Quaternion.identity;
                     break;
 
                 case MissileDirection.LEFT:
                     _direction = Vector3.left;
 
                     transform.rotation = Quaternion.Euler(0f, 0f, -90f);
-                    _bounds.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+                    c_bounds.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
                     break;
 
                 case MissileDirection.RIGHT:
                     _direction = Vector3.right;
 
                     transform.rotation = Quaternion.Euler(0f, 0f, 90f);
-                    _bounds.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+                    c_bounds.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
                     break;
             }
 
-            _animator.SetFloat("SwirlMult", 1f);
+            c_animator.SetFloat("SwirlMult", 1f);
 
-            MissileWarningData warning_data = new MissileWarningData(_spawnController.SpawnArgs.ScreenPosition,
-                _spawnController.SpawnArgs.Direction, _spawnController.SpawnData.GetCountdown());
+            MissileWarningData warning_data = new MissileWarningData(SpawnArgs.ScreenPosition,
+                SpawnArgs.Direction, SpawnData.GetCountdown());
 
             _warning = MissileWarning.Generate(Data.WarningInfo, warning_data);
 
             _warning.OnWarningEnded += EndWarning;
         }
 
-        protected override void Despawn<ObstacleType, SpawnScriptableObject, SpawnArguments>(ISpawnable<ObstacleType, SpawnScriptableObject, SpawnArguments> spawn)
+        protected override void DespawnInstructions()
         {
             _explodeCoroutine = null;
-
-            gameObject.SetActive(false);
         }
 
         protected override bool IsDespawnable()
         {
-            if (!_spawnController.Spawned)
-                return false;
-
             if (_warning != null)
                 return false;
 
-            switch (_spawnController.SpawnArgs.Direction)
+            switch (SpawnArgs.Direction)
             {
                 case MissileDirection.UP:
                     return BoundsOverScreen;
@@ -176,40 +128,41 @@ namespace JumpMaster.Obstacles
 
         private void EndWarning()
         {
-            Vector3 position_world = Camera.main.ScreenToWorldPoint(_spawnController.SpawnArgs.ScreenPosition);
-            switch (_spawnController.SpawnArgs.Direction)
+            Vector3 position_world = c_camera.ScreenToWorldPoint(SpawnArgs.ScreenPosition);
+            switch (SpawnArgs.Direction)
             {
                 case MissileDirection.UP:
-                    position_world.y -= Controller.ControllerData.SpawnMetrics.SpawnOffset;
+                    position_world.y -= SpawnMetrics.SpawnOffset;
                     break;
 
                 case MissileDirection.DOWN:
-                    position_world.y += Controller.ControllerData.SpawnMetrics.SpawnOffset;
+                    position_world.y += SpawnMetrics.SpawnOffset;
                     break;
 
                 case MissileDirection.LEFT:
-                    position_world.x += Controller.ControllerData.SpawnMetrics.SpawnOffset;
+                    position_world.x += SpawnMetrics.SpawnOffset;
                     break;
 
                 case MissileDirection.RIGHT:
-                    position_world.x -= Controller.ControllerData.SpawnMetrics.SpawnOffset;
+                    position_world.x -= SpawnMetrics.SpawnOffset;
                     break;
             }
+            position_world.z = transform.position.z;
             transform.position = position_world;
 
             _warning.OnWarningEnded -= EndWarning;
             _warning = null;
 
-            _sfxController.PlayLoopSound<MissileThrustSFXSourceController>(Data.ThrustSFX, new MissileThrust_SFX_SC_Args(gameObject, _spawnController.SpawnArgs.Direction));
+            SFXController.Instance.PlayLoopSound<MissileThrustSFXSourceController>(Data.ThrustSFX, new MissileThrust_SFX_SC_Args(gameObject, SpawnArgs.Direction));
 
             gameObject.SetActive(true);
         }
 
         private IEnumerator Explode()
         {
-            _rigidbody.velocity = Vector3.zero;
+            c_rigidbody.velocity = Vector3.zero;
 
-            _animator.SetFloat("SwirlMult", 0f);
+            c_animator.SetFloat("SwirlMult", 0f);
 
             Instantiate(Data.ExplosionPrefab, transform.position - Vector3.forward * 0.2f, Quaternion.identity);
 
@@ -220,7 +173,7 @@ namespace JumpMaster.Obstacles
 
             yield return new WaitForSeconds(Data.GameObjectDestroyDelayMS / 1000f);
 
-            _spawnController.Despawn();
+            Despawn();
         }
 
         void FixedUpdate()
@@ -229,7 +182,7 @@ namespace JumpMaster.Obstacles
                 return;
 
             if (_explodeCoroutine == null)
-                _rigidbody.velocity = _direction * _spawnController.SpawnData.Speed;
+                c_rigidbody.velocity = _direction * SpawnData.Speed;
         }
 
         private void OnTriggerEnter(Collider other)

@@ -1,11 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-
 using UnityEngine;
 
-using JumpMaster.Obstacles;
-
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
     [CreateAssetMenu(fileName = "Wave Data", menuName = "Game/Obstacles/Controllers/Wave Data")]
     public class WaveSO : ScriptableObject

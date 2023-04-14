@@ -15,7 +15,7 @@ namespace Studio28.SFX
                 if (s_instance == null)
                 {
                     GameObject tempGameObject = new GameObject("SFX Controller");
-                    return tempGameObject.AddComponent<SFXController>();
+                    s_instance = tempGameObject.AddComponent<SFXController>();
                 }
                 return s_instance;
             }

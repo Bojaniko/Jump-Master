@@ -73,7 +73,7 @@ namespace JumpMaster.SFX
 
                 Source.volume = volume;
             }
-            else if (_callerMissile.SpawnController.Spawned) Source.Play();
+            else if (_callerMissile.Spawned) Source.Play();
 
             if (_data.Caller.activeInHierarchy == false)
             {

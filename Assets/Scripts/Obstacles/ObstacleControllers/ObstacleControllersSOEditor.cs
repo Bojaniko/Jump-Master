@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
     [CustomEditor(typeof(ObstacleControllersSO))]
     public class ObstacleControllersSOEditor : Editor

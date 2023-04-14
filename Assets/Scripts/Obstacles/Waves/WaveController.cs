@@ -3,7 +3,7 @@ using UnityEngine;
 
 using Studio28.Utility;
 
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
     public enum WaveState { STARTED, ENDED }
     public enum WaveType { NORMAL, BOSS }
@@ -26,21 +26,12 @@ namespace JumpMaster.LevelControllers.Obstacles
             }
         }
 
-        private List<ObstacleController> _controllers;
-        public ObstacleController[] Controllers
-        {
-            get
-            {
-                return _controllers.ToArray();
-            }
-        }
-        public WaveController(List<ObstacleController> controllers)
+        public WaveController()
         {
             CurrentWave = 0;
             StartedTime = 0f;
             EndedTime = 0f;
 
-            _controllers = controllers;
             _stateController = new("Wave", WaveState.ENDED);
 
             ObstacleLevelController.Instance.OnLoop += UpdateWave;
@@ -51,16 +42,16 @@ namespace JumpMaster.LevelControllers.Obstacles
             if (_stateController.CurrentState.Equals(WaveState.STARTED))
                 return;
             _data = data;
-            foreach (ObstacleController controller in _controllers)
+            foreach (IObstacleController controller in ObstacleLevelController.Instance.Controllers)
             {
                 var controller_type = controller.GetType();
 
                 if (controller_type == typeof(FallingBombController))
-                    controller.Self.ControllerData.UpdateData(_data.ControllersData.FallingBomb);
+                    controller.UpdateData(_data.ControllersData.FallingBomb);
                 if (controller_type == typeof(LaserGateController))
-                    controller.Self.ControllerData.UpdateData(_data.ControllersData.LaserGate);
+                    controller.UpdateData(_data.ControllersData.LaserGate);
                 if (controller_type == typeof(MissileController))
-                    controller.Self.ControllerData.UpdateData(_data.ControllersData.Missile);
+                    controller.UpdateData(_data.ControllersData.Missile);
             }
         }
 
@@ -86,6 +77,8 @@ namespace JumpMaster.LevelControllers.Obstacles
             if (_stateController.CurrentState.Equals(WaveState.ENDED))
                 return;
 
+            Debug.Log($"Ended wave {CurrentWave}");
+
             _stateController.SetState(WaveState.ENDED);
 
             EndedTime = Time.time;
@@ -98,22 +91,30 @@ namespace JumpMaster.LevelControllers.Obstacles
             if (_stateController.CurrentState.Equals(WaveState.ENDED))
                 return;
 
-            bool ended = true;
+            ControllersTrySpawn();
 
-            ObstacleController controller;
-            for (int i = 0; i < _controllers.Count; i++)
-            {
-                controller = _controllers[i];
-                controller.TrySpawn();
-                if (ended == true && controller.SpawnsLeft > 0)
-                    ended = false;
-            }
-
-            if (ended == true && ObstacleLevelController.Instance.ActiveObstacles.Length > 0)
-                ended = false;
-
-            if (ended)
+            if (Ended())
                 EndWave();
+        }
+
+        private void ControllersTrySpawn()
+        {
+            foreach (IObstacleController controller in ObstacleLevelController.Instance.Controllers)
+            {
+                controller.TrySpawn();
+            }
+        }
+
+        private bool Ended()
+        {
+            if (ObstacleLevelController.Instance.ActiveObstacles.Length > 0)
+                return false;
+            foreach (IObstacleController controller in ObstacleLevelController.Instance.Controllers)
+            {
+                if (controller.SpawnsLeft > 0)
+                    return false;
+            }
+            return true;
         }
     }
 }

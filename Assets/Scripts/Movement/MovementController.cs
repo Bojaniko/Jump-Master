@@ -42,6 +42,12 @@ namespace JumpMaster.Movement
         {
             Instance = this;
 
+            if (MovementControllerData == null)
+            {
+                enabled = false;
+                return;
+            }
+
             ControlledRigidbody = GetComponent<Rigidbody>();
 
             Bounds = GetComponent<BoxCollider>();

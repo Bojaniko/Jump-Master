@@ -5,7 +5,6 @@ using UnityEngine;
 using JumpMaster.Structure;
 using JumpMaster.Movement;
 using JumpMaster.LevelControllers;
-using JumpMaster.LevelControllers.Obstacles;
 
 using Studio28.SFX;
 
@@ -21,72 +20,35 @@ namespace JumpMaster.Obstacles
         }
     }
 
-    public class FallingBomb : Obstacle, ISpawnable<FallingBomb, FallingBombSpawnSO, FallingBombArgs>, IObstacle<FallingBombSO, FallingBombController>
+    public class FallingBomb : Obstacle<FallingBombSO, FallingBombController, FallingBombSpawnSO, FallingBombSpawnMetricsSO, FallingBombArgs>
     {
         private float _armingDuration;
-        private float _gameObjectDestroyDuration;
-
         private float _currentDetectionShowTime;
-        private float _detectionShowDuration;
         private float _detectionShowDistanceScreen;
-
-        private Renderer _detectionRenderer;
-
-        private Material _bombLightRef;
 
         private Coroutine _explodeCoroutine;
 
-        private ObstacleSpawnController<FallingBomb, FallingBombSpawnSO, FallingBombArgs, ISpawnable<FallingBomb, FallingBombSpawnSO, FallingBombArgs>> _spawnController;
-        public ObstacleSpawnController<FallingBomb, FallingBombSpawnSO, FallingBombArgs, ISpawnable<FallingBomb, FallingBombSpawnSO, FallingBombArgs>> SpawnController
+        protected override void SpawnInstructions()
         {
-            get
-            {
-                return _spawnController;
-            }
-        }
-        public FallingBombSO Data
-        {
-            get
-            {
-                return _data as FallingBombSO;
-            }
-        }
-        public FallingBombController Controller
-        {
-            get
-            {
-                return _controller as FallingBombController;
-            }
-        }
-        public FallingBomb ObstacleSelf
-        {
-            get
-            {
-                return this;
-            }
-        }
+            _currentDetectionShowTime = c_detectionShowDuration;
+            c_bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
+            c_detectionRenderer.material.SetFloat("_Transparency", 1f);
 
-        protected override void Spawn()
-        {
-            _currentDetectionShowTime = _detectionShowDuration;
-            _bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
-            _detectionRenderer.material.SetFloat("_Transparency", 1f);
-
-            Vector2 pos_screen_margined = _spawnController.SpawnArgs.ScreenPosition;
+            Vector2 pos_screen_margined = SpawnArgs.ScreenPosition;
             pos_screen_margined.y += (BoundsScreenPosition.max.y - BoundsScreenPosition.min.y);
-            Vector3 pos_world = Camera.main.ScreenToWorldPoint(pos_screen_margined);
+            Vector3 pos_world = c_camera.ScreenToWorldPoint(pos_screen_margined);
             pos_world.z = Data.Z_Position;
             transform.position = pos_world;
 
-            _sphereCol.radius = _spawnController.SpawnData.DetectionRadius;
-            _detectionRenderer.transform.localScale = Vector3.one * (1 / _data.Scale) * _spawnController.SpawnData.DetectionRadius;
-            _detectionShowDistanceScreen = Vector2.Distance(Camera.main.WorldToScreenPoint(Vector2.zero), Camera.main.WorldToScreenPoint(new Vector2(0, _spawnController.SpawnData.DetectionShowDistance)));
-            _armingDuration = _spawnController.SpawnData.ArmingDurationMS / 1000f;
+            c_sphereCol.radius = SpawnData.DetectionRadius;
+            c_detectionRenderer.transform.localScale = Vector3.one * (1 / Data.Scale) * SpawnData.DetectionRadius;
+            _detectionShowDistanceScreen = Vector2.Distance(c_camera.WorldToScreenPoint(Vector2.zero), c_camera.WorldToScreenPoint(new Vector2(0, SpawnData.DetectionShowDistance)));
+            _armingDuration = SpawnData.ArmingDurationMS / 1000f;
 
             gameObject.SetActive(true);
         }
 
-        protected override void Despawn<ObstacleType, SpawnScriptableObject, SpawnArguments>(ISpawnable<ObstacleType, SpawnScriptableObject, SpawnArguments> spawn)
+        protected override void DespawnInstructions()
         {
             if (_explodeCoroutine != null)
                 _explodeCoroutine = null;
@@ -96,31 +58,29 @@ namespace JumpMaster.Obstacles
 
         protected override bool IsDespawnable()
         {
-            if (!_spawnController.Spawned)
-                return false;
             if (_explodeCoroutine != null) return false;
             return BoundsUnderScreen;
         }
 
         private IEnumerator Explode()
         {
-            _sfxController.PlaySound(Data.ArmingBeepSound, gameObject);
-            _bombLightRef.SetColor("_Color", Data.ArmedLightColor);
+            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
+            c_bombLightRef.SetColor("_Color", Data.ArmedLightColor);
 
             yield return new WaitForSecondsPausable(_armingDuration);
 
-            _sfxController.PlaySound(Data.ArmingBeepSound, gameObject);
-            _animator.Play("explode", 1);
+            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
+            c_animator.Play("explode", 1);
 
             yield return new WaitForSecondsPausable(_armingDuration);
 
-            _sfxController.PlaySound(Data.ExplosionSound, gameObject);
+            SFXController.Instance.PlaySound(Data.ExplosionSound, gameObject);
             Instantiate(Data.ExplosionPrefab, transform.position - Vector3.forward * 0.2f, Quaternion.identity);
-            DamageController.LogDamage(new DamageInfo(transform.position, _spawnController.SpawnData.DetectionRadius, 30f));
+            DamageController.LogDamage(new DamageInfo(transform.position, SpawnData.DetectionRadius, 30f));
 
-            yield return new WaitForSeconds(_gameObjectDestroyDuration);
+            yield return new WaitForSeconds(c_gameObjectDestroyDuration);
 
-            _spawnController.Despawn();
+            Despawn();
         }
 
         private void ShowDetection()
@@ -130,89 +90,70 @@ namespace JumpMaster.Obstacles
             if (_currentDetectionShowTime <= 0.0f)
                 _currentDetectionShowTime = 0.0f;
 
-            _detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / _detectionShowDuration);
+            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
         }
 
         private void HideDetection()
         {
             _currentDetectionShowTime += 1f * Time.deltaTime;
 
-            if (_currentDetectionShowTime >= _detectionShowDuration)
-                _currentDetectionShowTime = _detectionShowDuration;
+            if (_currentDetectionShowTime >= c_detectionShowDuration)
+                _currentDetectionShowTime = c_detectionShowDuration;
 
-            _detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / _detectionShowDuration);
+            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
         }
 
         protected override void Initialize()
         {
-            _detectionShowDuration = Data.DetectionShowDurationMS / 1000f;
-            _gameObjectDestroyDuration = Data.GameObjectDestroyDelayMS / 1000f;
+            LevelController.OnPause += Pause;
+            LevelController.OnResume += Resume;
+            LevelController.OnEndLevel += EndLevel;
 
-            for (int child = 0; child < transform.childCount; child++)
-            {
-                if (transform.GetChild(child).name.Equals("bomb"))
-                {
-                    foreach (Material material in transform.GetChild(child).GetComponent<Renderer>().materials)
-                    {
-                        if (material.name.ToUpper().Equals("LIGHT (INSTANCE)"))
-                        {
-                            _bombLightRef = material;
-                            break;
-                        }
-                    }
-                }
-                if (transform.GetChild(child).name.Equals("detection"))
-                {
-                    _detectionRenderer = transform.GetChild(child).GetComponent<Renderer>();
-                    _detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / _detectionShowDuration);
-                }
-            }
-
-            _spawnController = new(this, this);
-            _spawnController.OnSpawn += Spawn;
-            _spawnController.OnDespawn += Despawn;
+            CacheParts();
         }
 
-        protected override void Pause()
+        private void Pause()
         {
-            _rigidbody.velocity = Vector3.zero;
-            _animator.SetFloat("Speed", 0f);
+            c_rigidbody.velocity = Vector3.zero;
+            c_animator.SetFloat("Speed", 0f);
         }
 
-        protected override void Resume()
+        private void Resume()
         {
-            _animator.SetFloat("Speed", 1f);
+            c_animator.SetFloat("Speed", 1f);
         }
 
-        protected override void EndLevel()
+        private void EndLevel()
         {
+            if (!gameObject.activeSelf)
+                return;
+
             _explodeCoroutine = StartCoroutine("Explode");
         }
 
-        protected override void Restart()
+        protected override void RestartInstructions()
         {
-            _currentDetectionShowTime = _detectionShowDuration;
-            _bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
-            _detectionRenderer.material.SetFloat("_Transparency", 1f);
-            _spawnController.Despawn();
+            _currentDetectionShowTime = c_detectionShowDuration;
+            c_bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
+            c_detectionRenderer.material.SetFloat("_Transparency", 1f);
         }
 
         protected override void OnUpdate()
         {
             if (_explodeCoroutine == null)
             {
-                if (Vector2.Distance(ScreenPosition, Camera.main.WorldToScreenPoint(MovementController.Instance.transform.position)) <= _detectionShowDistanceScreen)
+                if (Vector2.Distance(ScreenPosition, c_camera.WorldToScreenPoint(MovementController.Instance.transform.position)) <= _detectionShowDistanceScreen)
                 {
                     if (_currentDetectionShowTime > 0.0f) ShowDetection();
                 }
                 else
                 {
-                    if (_currentDetectionShowTime < _detectionShowDuration) HideDetection();
+                    if (_currentDetectionShowTime < c_detectionShowDuration) HideDetection();
                 }
             }
             else
             {
-                if (_currentDetectionShowTime < _detectionShowDuration) HideDetection();
+                if (_currentDetectionShowTime < c_detectionShowDuration) HideDetection();
             }
         }
 
@@ -224,7 +165,7 @@ namespace JumpMaster.Obstacles
             if (_explodeCoroutine != null)
                 return;
 
-            _rigidbody.velocity = Vector3.down * _animator.GetFloat("Falling");
+            c_rigidbody.velocity = Vector3.down * c_animator.GetFloat("Falling");
         }
 
         private void OnTriggerEnter(Collider other)
@@ -232,6 +173,40 @@ namespace JumpMaster.Obstacles
             if (other.CompareTag("Player"))
             {
                 _explodeCoroutine = StartCoroutine("Explode");
+            }
+        }
+
+        // ##### CACHE ##### \\
+
+        private Material c_bombLightRef;
+        private Renderer c_detectionRenderer;
+
+        private float c_detectionShowDuration;
+        private float c_gameObjectDestroyDuration;
+
+        private void CacheParts()
+        {
+            c_detectionShowDuration = Data.DetectionShowDurationMS / 1000f;
+            c_gameObjectDestroyDuration = Data.GameObjectDestroyDelayMS / 1000f;
+
+            for (int child = 0; child < transform.childCount; child++)
+            {
+                if (transform.GetChild(child).name.Equals("bomb"))
+                {
+                    foreach (Material material in transform.GetChild(child).GetComponent<Renderer>().materials)
+                    {
+                        if (material.name.ToUpper().Equals("LIGHT (INSTANCE)"))
+                        {
+                            c_bombLightRef = material;
+                            break;
+                        }
+                    }
+                }
+                if (transform.GetChild(child).name.Equals("detection"))
+                {
+                    c_detectionRenderer = transform.GetChild(child).GetComponent<Renderer>();
+                    c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
+                }
             }
         }
     }

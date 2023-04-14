@@ -1,19 +1,18 @@
-using System.Collections;
-using System.Collections.Generic;
-
-using UnityEngine;
-
-using JumpMaster.Obstacles;
-
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
-    public interface IObstacleController<Obstacle, ObstacleScriptableObject, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments>
-        where Obstacle : JumpMaster.Obstacles.Obstacle
-        where ObstacleScriptableObject : ObstacleSO
-        where SpawnScriptableObject : SpawnSO
-        where SpawnMetricsScriptableObject : SpawnMetricsSO<ObstacleScriptableObject, SpawnScriptableObject>
-        where SpawnArguments : SpawnArgs
+    public delegate void ObstacleControllerEventHandler();
+
+    public interface IObstacleController
     {
-        public ObstacleControllerData<Obstacle, ObstacleScriptableObject, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments> ControllerData { get; }
+        public event ObstacleControllerEventHandler OnActiveObstaclesChange;
+
+        public int SpawnsLeft { get; }
+
+        public IObstacle[] ActiveObstacles { get; }
+
+        public ISpawnMetricsSO SpawnMetrics { get; }
+
+        public void TrySpawn();
+        public void UpdateData(ISpawnMetricsSO spawn_metrics);
     }
 }

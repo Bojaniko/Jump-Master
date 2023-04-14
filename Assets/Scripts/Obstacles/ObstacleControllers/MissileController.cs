@@ -2,45 +2,36 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using JumpMaster.Obstacles;
-
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
-    public class MissileController : ObstacleController, IObstacleController<Missile, MissileSO, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs>
+    public class MissileController : ObstacleController<Missile, MissileSO, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs>
     {
-        private ObstacleControllerData<Missile, MissileSO, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs> _data;
-        public ObstacleControllerData<Missile, MissileSO, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs> ControllerData { get { return _data; } }
-
         private int _spawnRandomTarget;
         private List<int> _randomNumbers;
 
         protected override bool CanSpawn()
         {
-            if (_data.LastSpawnTime > 0f && Time.time - _data.LastSpawnTime < _data.SpawnMetrics.Interval)
+            if (LastSpawnTime > 0f && Time.time - LastSpawnTime < _spawnMetrics.Interval)
                 return false;
 
             if (SpawnChanceSuccessful())
                 return true;
-            else if (Time.time - _data.LastSpawnTime >= _data.SpawnMetrics.Interval)
+            else if (Time.time - LastSpawnTime >= _spawnMetrics.Interval)
                 return false;
 
             return false;
         }
 
-        protected override void Spawn()
+        protected override MissileSpawnArgs GenerateSpawnArguments()
         {
             MissileDirection direction = RandomDirection;
-            MissileSpawnArgs spawn_args = new MissileSpawnArgs(RandomSpawnPosition(direction), direction);
-
-            _data.SpawnFromPool(_data.SpawnMetrics.GetRandomSpawnData(), spawn_args);
+            return new MissileSpawnArgs(RandomSpawnPosition(direction), direction);
         }
 
-        public MissileController(MissileSpawnMetricsSO default_spawn_metrics)
+        public MissileController(MissileSpawnMetricsSO default_spawn_metrics) : base(default_spawn_metrics)
         {
             _randomNumbers = new();
             _spawnRandomTarget = Random.Range(0, 100);
-
-            _data = new(default_spawn_metrics, this);
         }
 
         private int GetUniqueRandomPercentage()
@@ -55,12 +46,12 @@ namespace JumpMaster.LevelControllers.Obstacles
 
         private bool SpawnChanceSuccessful()
         {
-            if (_data.SpawnMetrics.SpawnChance == 100)
+            if (_spawnMetrics.SpawnChance == 100)
                 return true;
 
             _randomNumbers.Clear();
 
-            for (int i = 0; i < _data.SpawnMetrics.SpawnChance + 1; i++)
+            for (int i = 0; i < _spawnMetrics.SpawnChance + 1; i++)
             {
                 _randomNumbers.Add(GetUniqueRandomPercentage());
                 if (_randomNumbers.Contains(_spawnRandomTarget))
@@ -71,35 +62,33 @@ namespace JumpMaster.LevelControllers.Obstacles
 
         private bool ScreenPositionOverlaping(Vector3 position, MissileDirection direction)
         {
-            if (_data.ActiveObstacles.Length == 0)
+            if (ActiveObstacles.Length == 0)
                 return false;
-            foreach (Missile missile in _data.AllObstacles)
+            foreach (Missile missile in ActiveObstacles)
             {
-                if (!missile.SpawnController.Spawned)
-                    continue;
                 switch(direction)
                 {
                     case MissileDirection.DOWN:
-                        if (position.x > missile.SpawnController.SpawnArgs.ScreenPosition.x + _data.SpawnMetrics.ScreenOverlapLimit ||
-                            position.x < missile.SpawnController.SpawnArgs.ScreenPosition.x - _data.SpawnMetrics.ScreenOverlapLimit)
+                        if (position.x > missile.SpawnArgs.ScreenPosition.x + _spawnMetrics.ScreenOverlapLimit ||
+                            position.x < missile.SpawnArgs.ScreenPosition.x - _spawnMetrics.ScreenOverlapLimit)
                             return false;
                         break;
 
                     case MissileDirection.UP:
-                        if (position.x > missile.SpawnController.SpawnArgs.ScreenPosition.x + _data.SpawnMetrics.ScreenOverlapLimit ||
-                            position.x < missile.SpawnController.SpawnArgs.ScreenPosition.x - _data.SpawnMetrics.ScreenOverlapLimit)
+                        if (position.x > missile.SpawnArgs.ScreenPosition.x + _spawnMetrics.ScreenOverlapLimit ||
+                            position.x < missile.SpawnArgs.ScreenPosition.x - _spawnMetrics.ScreenOverlapLimit)
                             return false;
                         break;
 
                     case MissileDirection.LEFT:
-                        if (position.y > missile.SpawnController.SpawnArgs.ScreenPosition.y + _data.SpawnMetrics.ScreenOverlapLimit ||
-                            position.y < missile.SpawnController.SpawnArgs.ScreenPosition.y - _data.SpawnMetrics.ScreenOverlapLimit)
+                        if (position.y > missile.SpawnArgs.ScreenPosition.y + _spawnMetrics.ScreenOverlapLimit ||
+                            position.y < missile.SpawnArgs.ScreenPosition.y - _spawnMetrics.ScreenOverlapLimit)
                             return false;
                         break;
 
                     case MissileDirection.RIGHT:
-                        if (position.y > missile.SpawnController.SpawnArgs.ScreenPosition.y + _data.SpawnMetrics.ScreenOverlapLimit ||
-                            position.y < missile.SpawnController.SpawnArgs.ScreenPosition.y - _data.SpawnMetrics.ScreenOverlapLimit)
+                        if (position.y > missile.SpawnArgs.ScreenPosition.y + _spawnMetrics.ScreenOverlapLimit ||
+                            position.y < missile.SpawnArgs.ScreenPosition.y - _spawnMetrics.ScreenOverlapLimit)
                             return false;
                         break;
                 }
@@ -114,29 +103,29 @@ namespace JumpMaster.LevelControllers.Obstacles
             switch(direction)
             {
                 case MissileDirection.DOWN:
-                    percent_to_pos = (Screen.width / 100) * _data.SpawnMetrics.ScreenMarginPercentage;
-                    position_screen = new(Random.Range(percent_to_pos, Screen.width - percent_to_pos), Screen.height, _data.ObstacleData.Z_Position);
+                    percent_to_pos = (Screen.width / 100) * _spawnMetrics.ScreenMarginPercentage;
+                    position_screen = new(Random.Range(percent_to_pos, Screen.width - percent_to_pos), Screen.height, ObstacleData.Z_Position);
 
                     if (ScreenPositionOverlaping(position_screen, direction))
                         return RandomSpawnPosition(direction);
                     break;
                 case MissileDirection.UP:
-                    percent_to_pos = (Screen.width / 100) * _data.SpawnMetrics.ScreenMarginPercentage;
-                    position_screen = new(Random.Range(percent_to_pos, Screen.width - percent_to_pos), 0, _data.ObstacleData.Z_Position);
+                    percent_to_pos = (Screen.width / 100) * _spawnMetrics.ScreenMarginPercentage;
+                    position_screen = new(Random.Range(percent_to_pos, Screen.width - percent_to_pos), 0, ObstacleData.Z_Position);
 
                     if (ScreenPositionOverlaping(position_screen, direction))
                         return RandomSpawnPosition(direction);
                     break;
                 case MissileDirection.LEFT:
-                    percent_to_pos = (Screen.height / 100) * _data.SpawnMetrics.ScreenMarginPercentage;
-                    position_screen = new(Screen.width, Random.Range(percent_to_pos, Screen.height - percent_to_pos), _data.ObstacleData.Z_Position);
+                    percent_to_pos = (Screen.height / 100) * _spawnMetrics.ScreenMarginPercentage;
+                    position_screen = new(Screen.width, Random.Range(percent_to_pos, Screen.height - percent_to_pos), ObstacleData.Z_Position);
 
                     if (ScreenPositionOverlaping(position_screen, direction))
                         return RandomSpawnPosition(direction);
                     break;
                 case MissileDirection.RIGHT:
-                    percent_to_pos = (Screen.height / 100) * _data.SpawnMetrics.ScreenMarginPercentage;
-                    position_screen = new(0, Random.Range(percent_to_pos, Screen.height - percent_to_pos), _data.ObstacleData.Z_Position);
+                    percent_to_pos = (Screen.height / 100) * _spawnMetrics.ScreenMarginPercentage;
+                    position_screen = new(0, Random.Range(percent_to_pos, Screen.height - percent_to_pos), ObstacleData.Z_Position);
 
                     if (ScreenPositionOverlaping(position_screen, direction))
                         return RandomSpawnPosition(direction);

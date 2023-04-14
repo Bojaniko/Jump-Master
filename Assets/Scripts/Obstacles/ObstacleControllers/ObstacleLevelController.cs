@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using JumpMaster.Obstacles;
+using JumpMaster.LevelControllers;
 
-namespace JumpMaster.LevelControllers.Obstacles
+namespace JumpMaster.Obstacles
 {
     public class ObstacleLevelController : LevelControllerInitializable
     {
@@ -34,17 +34,31 @@ namespace JumpMaster.LevelControllers.Obstacles
             if (_laserGateController == null)
                 _laserGateController = new(_data.DefaultControllersData.LaserGate);
 
+            _controllers = new();
+
+            _controllers.Add(_missileController);
+            _controllers.Add(_fallingBombController);
+            _controllers.Add(_laserGateController);
+
+            foreach (IObstacleController controller in _controllers)
+            {
+                controller.OnActiveObstaclesChange += CalculateActiveObstacles;
+            }
+
             if (_waveController == null)
             {
-                List<ObstacleController> controllers = new();
-
-                controllers.Add(_missileController);
-                controllers.Add(_fallingBombController);
-                controllers.Add(_laserGateController);
-
-                _waveController = new(controllers);
-
+                _waveController = new();
                 _waveController.NewWave(_data.GetRandomNormalWave());
+            }
+        }
+
+        private void CalculateActiveObstacles()
+        {
+            _activeObstacles.Clear();
+
+            foreach (IObstacleController controller in _controllers)
+            {
+                _activeObstacles.AddRange(controller.ActiveObstacles);
             }
         }
 
@@ -70,19 +84,12 @@ namespace JumpMaster.LevelControllers.Obstacles
             _activeObstaclesInTop = new();
 
             _topSpawnMarginScreen = Screen.height - ((Screen.height / 100f) * _data.TopSpawnMarginPercentage);
-            _spawnCheckInterval = _data.SpawnCheckInterval / 1000f;
 
             InitializeControllers();
-
-            LevelController.OnStartLevel += StartControllers;
-            LevelController.OnEndLevel += EndControllers;
         }
 
         public delegate void SpawnLoopEventHandler();
         public event SpawnLoopEventHandler OnLoop;
-
-        private float _spawnCheckInterval;
-        private Coroutine _controllersCoroutine;
 
         private ObstacleLevelControllerSO _data;
 
@@ -92,33 +99,16 @@ namespace JumpMaster.LevelControllers.Obstacles
         private FallingBombController _fallingBombController;
         private LaserGateController _laserGateController;
 
-        private float _lastCheckActiveObstacles = 0f;
-        private List<Obstacle> _activeObstacles;
-        public Obstacle[] ActiveObstacles
-        {
-            get
-            {
-                if (_lastCheckActiveObstacles != Time.time)
-                {
-                    _activeObstacles.Clear();
+        private List<IObstacleController> _controllers;
+        public IObstacleController[] Controllers => _controllers.ToArray();
 
-                    for (int i = 0; i < _waveController.Controllers.Length; i++)
-                    {
-                        if (_waveController.Controllers[i].Self.ControllerData.ActiveObstacles.Length > 0)
-                            _activeObstacles.AddRange(_waveController.Controllers[i].Self.ControllerData.ActiveObstacles);
-
-                    }
-                    _lastCheckActiveObstacles = Time.time;
-                }
-
-                return _activeObstacles.ToArray();
-            }
-        }
+        private List<IObstacle> _activeObstacles;
+        public IObstacle[] ActiveObstacles => _activeObstacles.ToArray();
 
         private float _topSpawnMarginScreen;
         private float _lastCheckActiveObstaclesTopMargin = 0f;
-        private List<Obstacle> _activeObstaclesInTop;
-        public Obstacle[] ActiveObstaclesInTopSpawnMargin
+        private List<IObstacle> _activeObstaclesInTop;
+        public IObstacle[] ActiveObstaclesInTopSpawnMargin
         {
             get
             {
@@ -139,38 +129,21 @@ namespace JumpMaster.LevelControllers.Obstacles
             }
         }
 
-        private void StartControllers()
+        private void Update()
         {
-            if (_controllersCoroutine != null)
+            if (!LevelController.Started)
                 return;
-
-            _controllersCoroutine = StartCoroutine(ControllersLoop());
-        }
-
-        private void EndControllers()
-        {
-            if (_controllersCoroutine == null)
-                return;
-
-            StopCoroutine(_controllersCoroutine);
-        }
-
-        private IEnumerator ControllersLoop()
-        {
-            yield return new WaitForSeconds(_spawnCheckInterval);
 
             if (LevelController.Paused)
-                yield return ControllersLoop();
+                return;
 
             if (ActiveObstacles.Length >= _data.MaxObstaclesAtOnce)
-                yield return ControllersLoop();
+                return;
 
             if (_waveController.CurrentState.Equals(WaveState.ENDED))
             {
-                if (_waveController.StartedTime == 0f)
-                    yield return new WaitForSeconds(_data.FirstWaveInterval);
-                else
-                    yield return new WaitForSeconds(_data.WaveInterval);
+                if (_waveController.EndedTime != 0f && Time.time - _waveController.EndedTime < _data.WaveInterval)
+                    return;
 
                 WaveSO wave_data = null;
                 if (_waveController.CurrentWave % _data.BossWaveCount == 0)
@@ -183,10 +156,7 @@ namespace JumpMaster.LevelControllers.Obstacles
                 _waveController.StartWave();
             }
 
-            if (OnLoop != null)
-                OnLoop();
-
-            yield return ControllersLoop();
+            OnLoop?.Invoke();
         }
     }
 }
