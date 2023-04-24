@@ -13,15 +13,15 @@
 /ProjectSettings/
 /Packages/
 Assets/Animation/
-Assets/Materials/
 Assets/Models/
 Assets/Particle/
 Assets/Fonts/
 Assets/Prefabs/
 Assets/Scenes/
 Assets/SFX/
-Assets/Shaders/
-Assets/Textures/
+Assets/Graphics/Post-Processing/
+Assets/Graphics/Materials/
+Assets/Graphics/Textures/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
