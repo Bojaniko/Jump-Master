@@ -1,5 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
+
+using JumpMaster.LevelControllers;
 
 using Studio28.Utility;
 
@@ -33,6 +34,8 @@ namespace JumpMaster.Obstacles
             EndedTime = 0f;
 
             _stateController = new("Wave", WaveState.ENDED);
+
+            LevelController.OnRestart += Restart;
 
             ObstacleLevelController.Instance.OnLoop += UpdateWave;
         }
@@ -69,7 +72,7 @@ namespace JumpMaster.Obstacles
 
             CurrentWave++;
 
-            Debug.Log("Wave " + CurrentWave);
+            //Debug.Log("Wave " + CurrentWave);
         }
 
         public void EndWave()
@@ -77,13 +80,23 @@ namespace JumpMaster.Obstacles
             if (_stateController.CurrentState.Equals(WaveState.ENDED))
                 return;
 
-            Debug.Log($"Ended wave {CurrentWave}");
+            //Debug.Log($"Ended wave {CurrentWave}");
 
             _stateController.SetState(WaveState.ENDED);
 
             EndedTime = Time.time;
 
             _data = null;
+        }
+
+        private void Restart()
+        {
+            EndWave();
+
+            CurrentWave = 0;
+
+            EndedTime = 0f;
+            StartedTime = 0f;
         }
 
         private void UpdateWave()

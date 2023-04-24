@@ -11,7 +11,8 @@ namespace JumpMaster.Movement
         [Range(0.5f, 10f)]
         public float Distance = 2.5f;
         [Range(0f, 1f)]
-        public float EndDistancePercentage = 0.95f;
+        public float TransitionDistancePercentage = 0.95f;
+        public AnimationCurve VelocityFalloff;
 
         [Header("Chain")]
         [Range(1, 10)]

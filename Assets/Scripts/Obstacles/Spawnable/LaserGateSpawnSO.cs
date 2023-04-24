@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace JumpMaster.Obstacles
@@ -15,8 +13,5 @@ namespace JumpMaster.Obstacles
 
         [Range(6f, 20f)]
         public float GateWidth = 8f;
-
-        public Color ActiveColor = Color.green;
-        public Color InactiveColor = Color.red;
     }
 }

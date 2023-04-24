@@ -4,11 +4,21 @@ using JumpMaster.LevelControllers;
 
 namespace JumpMaster.Movement
 {
-    public sealed class HangControl : MovementControl<HangControlDataSO>, IExplicitControl
+    public sealed class HangControl : MovementControl<HangControlDataSO, HangControlArgs>, IExplicitControl, IDirectional
     {
         private readonly float _hangFromScreenWidth;
 
         public event ExplicitControlEventHandler OnExplicitDetection;
+
+        public MovementDirection Direction
+        {
+            get
+            {
+                if (_controlArgs == null)
+                    return MovementDirection.Zero;
+                return _controlArgs.Direction;
+            }
+        }
 
         public HangControl(MovementController controller, HangControlDataSO data) : base(controller, data)
         {
@@ -37,9 +47,9 @@ namespace JumpMaster.Movement
             Controller.ControlledRigidbody.velocity = Vector3.zero;
 
             Vector3 hang_position = Vector3.zero;
-            if (ControlArgs.Direction.Horizontal == 1)
+            if (_controlArgs.Direction.Horizontal == 1)
                 hang_position = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width - ((Controller.BoundsScreenPosition.max.x - Controller.BoundsScreenPosition.min.x) / 2), 0));
-            if (ControlArgs.Direction.Horizontal == -1)
+            if (_controlArgs.Direction.Horizontal == -1)
                 hang_position = Camera.main.ScreenToWorldPoint(new Vector2((Controller.BoundsScreenPosition.max.x - Controller.BoundsScreenPosition.min.x) / 2, 0));
             hang_position.y = Controller.transform.position.y;
             hang_position.z = Controller.transform.position.z;
@@ -60,10 +70,7 @@ namespace JumpMaster.Movement
             if (Started)
                 return;
 
-            if (Controller.ActiveControl.ControlArgs.Direction.Horizontal == 0)
-                return;
-
-            if (Controller.ActiveControl.ControlArgs.Direction.Horizontal == -1)
+            if (Controller.ControlledRigidbody.velocity.x < 0f)
             {
                 if (Controller.ControlledRigidbody.velocity.x < -ControlData.MinStickVelocity)
                 {
@@ -75,10 +82,10 @@ namespace JumpMaster.Movement
                     if (Controller.BoundsScreenPosition.min.x >= 0)
                         return;
                 }
-                OnExplicitDetection(this, new(Controller.ControlledRigidbody, MovementDirection.Left));
+                OnExplicitDetection?.Invoke(this, new HangControlArgs(new(Controller), MovementDirection.Left));
             }
 
-            if (Controller.ActiveControl.ControlArgs.Direction.Horizontal == 1)
+            if (Controller.ControlledRigidbody.velocity.x > 0f)
             {
                 if (Controller.ControlledRigidbody.velocity.x > ControlData.MinStickVelocity)
                 {
@@ -90,18 +97,16 @@ namespace JumpMaster.Movement
                     if (Controller.BoundsScreenPosition.max.x <= Screen.width)
                         return;
                 }
-                OnExplicitDetection(this, new(Controller.ControlledRigidbody, MovementDirection.Right));
+                OnExplicitDetection?.Invoke(this, new HangControlArgs(new(Controller), MovementDirection.Right));
             }
         }
 
         private void SwitchDirection()
         {
-            MovementDirection dir;
-            if (ControlArgs.Direction.Horizontal == 1)
-                dir = new(0, -1);
+            if (_controlArgs.Direction.Equals(MovementDirection.Left))
+                _controlArgs.Direction = MovementDirection.Right;
             else
-                dir = new(0, 1);
-            UpdateDirection(dir);
+                _controlArgs.Direction = MovementDirection.Left;
         }
     }
 }

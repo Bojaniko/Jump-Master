@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using JumpMaster.Controls;
-
 namespace JumpMaster.LevelControllers
 {
     public class LevelController : MonoBehaviour
@@ -116,6 +114,7 @@ namespace JumpMaster.LevelControllers
 
             Paused = false;
             Started = false;
+            Ended = false;
 
             if (OnRestart != null)
                 OnRestart();

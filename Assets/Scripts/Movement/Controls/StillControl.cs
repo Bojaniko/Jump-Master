@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public class StillControl : MovementControl<StillControlDataSO>
+    public class StillControl : MovementControl<StillControlDataSO, MovementControlArgs>
     {
         public StillControl(MovementController controller, StillControlDataSO data) : base(controller, data)
         {

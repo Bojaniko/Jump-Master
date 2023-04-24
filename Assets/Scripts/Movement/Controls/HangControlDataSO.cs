@@ -6,11 +6,11 @@ namespace JumpMaster.Movement
     public class HangControlDataSO : MovementControlDataSO
     {
         [Header("Hanging")]
-        [Range(0.5f, 10f)]
-        public float MinDuration = 0.5f;
+        [Range(0f, 5f)]
+        public float MinDuration = 0.2f;
         [Range(0, 100)]
         public int StickDistanceScreen = 20;
-        [Range(0f, 2f)]
+        [Range(0f, 10f)]
         public float MinStickVelocity = 1f;
     }
 }

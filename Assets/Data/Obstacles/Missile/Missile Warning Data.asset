@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: Missile Warning Data
   m_EditorClassIdentifier: 
   Prefab: {fileID: 3186997766213222351, guid: b9fa923a1bbddea4fa30eabaebcd8672, type: 3}
+  FlashIntervals: 3
   FlashIntervalMS: 500
   ScreenMargin: 60

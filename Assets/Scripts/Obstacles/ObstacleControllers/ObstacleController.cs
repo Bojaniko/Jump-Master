@@ -20,8 +20,7 @@ namespace JumpMaster.Obstacles
             SubscribeObstacleEvents(Pool.AllObstacles);
             Pool.OnActiveObstaclesChange += () =>
             {
-                if (OnActiveObstaclesChange != null)
-                    OnActiveObstaclesChange();
+                OnActiveObstaclesChange?.Invoke();
             };
         }
 

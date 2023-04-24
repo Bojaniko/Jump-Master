@@ -5,24 +5,34 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public sealed class DashControl : MovementControl<DashControlDataSO>, ITransitionable, IInputableControl
+    public sealed class DashControl : MovementControl<DashControlDataSO, DashControlArgs>, ITransitionable, IInputableControl, IDirectional
     {
         private float _chainPenaltyTime;
         private Vector3 _vectorDirection;
 
+        public MovementDirection Direction
+        {
+            get
+            {
+                if (_controlArgs == null)
+                    return MovementDirection.Zero;
+                return _controlArgs.Direction;
+            }
+        }
+
         public float DistancePercentage { get; private set; }
         public int Chain { get; private set; }
 
+        public event ChainEventHandler OnChain;
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
-
-        public delegate void DashControlEventHander();
-        public event DashControlEventHander OnChainUpdate;
 
         public DashControl(MovementController controller, DashControlDataSO data) : base(controller, data)
         {
             if (SwipeDetector.Instance != null)
                 SwipeDetector.Instance.OnSwipeDetected += DashInput;
+
+            _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero);
 
             DistancePercentage = 0f;
         }
@@ -30,25 +40,20 @@ namespace JumpMaster.Movement
 
         protected override void OnMovementUpdate()
         {
-            if (Chain > 0 && Time.time - _chainPenaltyTime > ControlData.ChainPenaltyDuration)
-            {
-                Chain = 0;
-                if (OnChainUpdate != null)
-                    OnChainUpdate();
-            }
+            TryRestartChain();
 
             if (!Started)
                 return;
 
             DistancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / ControlData.Distance;
 
-            if (DistancePercentage < ControlData.EndDistancePercentage)
+            if (DistancePercentage < ControlData.TransitionDistancePercentage)
                 return;
 
             if (OnTransitionable != null)
             {
-                MovementControlArgs start_args = new(Controller.ControlledRigidbody, ControlArgs.Direction, 1f);
-                OnTransitionable(Controller.GetControlByState(TransitionState), start_args);
+                FallControlArgs start_args = new(new(Controller));
+                OnTransitionable(Controller.GetControlByState(TransitionState), new FallControlArgs(start_args));
             }
         }
 
@@ -74,13 +79,9 @@ namespace JumpMaster.Movement
         {
             Controller.ControlledRigidbody.useGravity = false;
 
-            Chain++;
-            _chainPenaltyTime = ControlArgs.StartTime;
-
-            if (OnChainUpdate != null)
-                OnChainUpdate();
-
             _vectorDirection = GetVectorDirection(Controller.PreviousControl.ActiveState);
+
+            PerformChain();
         }
 
         public override bool CanExit()
@@ -112,38 +113,59 @@ namespace JumpMaster.Movement
             _chainPenaltyTime += LevelController.LastPauseDuration;
         }
 
+        // ##### CHAIN ##### \\
+
+        private void PerformChain()
+        {
+            Chain++;
+            _chainPenaltyTime = Time.time;
+
+            OnChain?.Invoke(Chain, ControlData.MaxChain);
+        }
+
+        private void TryRestartChain()
+        {
+            if (Chain == 0)
+                return;
+
+            if (Time.time - _chainPenaltyTime < ControlData.ChainPenaltyDuration)
+                return;
+
+            Chain = 0;
+            OnChain?.Invoke(Chain, ControlData.MaxChain);
+        }
+
         // Detect swipe input for dashing.
-        private void DashInput(SwipeDirection direction)
+        private void DashInput(Swipe swipe)
         {
             int dir = 0;
-            if (direction.Equals(SwipeDirection.LEFT)) dir = -1;
-            if (direction.Equals(SwipeDirection.RIGHT)) dir = 1;
+            if (swipe.Direction.Equals(SwipeDirection.LEFT)) dir = -1;
+            if (swipe.Direction.Equals(SwipeDirection.RIGHT)) dir = 1;
 
             if (dir == 0)
                 return;
 
             if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
             {
-                if (Controller.ActiveControl.ControlArgs.Direction.Horizontal != dir)
+                HangControlArgs hangArgs = (HangControlArgs)Controller.ActiveControl.ControlArgs;
+                if (hangArgs.Direction.Horizontal != dir)
                     return;
             }
 
             MovementDirection direction_move = new(0, dir);
-
-            OnInputDetected(this, new(Controller.ControlledRigidbody, direction_move));
+            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), direction_move));
         }
 
         // Get the direction the player should move at.
         private Vector3 GetVectorDirection(MovementState transition_state)
         {
-            Vector3 vector_direction = Vector3.right * ControlArgs.Direction.Horizontal;
+            Vector3 vector_direction = Vector3.right * _controlArgs.Direction.Horizontal;
 
             if (transition_state.Equals(MovementState.JUMPING)
                 || transition_state.Equals(MovementState.FLOATING)
                 || transition_state.Equals(MovementState.HANGING))
             {
                 vector_direction += Vector3.up * ControlData.CrossChainVelocity;
-                UpdateDirection(new(1, ControlArgs.Direction.Horizontal));
             }
             return vector_direction;
         }

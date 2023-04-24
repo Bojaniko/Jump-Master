@@ -6,25 +6,20 @@ using UnityEngine.UI;
 using JumpMaster.Structure;
 using JumpMaster.Obstacles;
 using JumpMaster.UI.Data;
-using JumpMaster.LevelControllers;
 
 namespace JumpMaster.UI
 {
-    public struct MissileWarningData
+    public struct MissileWarningArgs
     {
         public readonly Vector2 ScreenPosition;
 
         public readonly MissileDirection Direction;
 
-        public readonly float Duration;
-
-        public MissileWarningData(Vector2 screen_position, MissileDirection direction, float duration)
+        public MissileWarningArgs(Vector2 screen_position, MissileDirection direction)
         {
             ScreenPosition = screen_position;
 
             Direction = direction;
-
-            Duration = duration;
         }
     }
 
@@ -34,134 +29,155 @@ namespace JumpMaster.UI
     {
         public event MissileWarningEventHandler OnWarningEnded;
 
-        private MissileWarningSO _info;
+        // ##### GENERATION ##### \\
 
-        private MissileWarningData _data;
+        private MissileWarningSO _data;
+        private static MissileWarningSO s_data;
 
-        private float _flashInterval;
-
-        private RawImage _image;
-
-        private RectTransform _rect;
-
-        private bool _ended = false;
-        private float _countdownStartTime = 0f;
-
-        private void Start()
+        public static MissileWarning Generate(MissileWarningSO data)
         {
-            if (_info == null)
-            {
-                Debug.LogError("Please use the Generate function for creating missile warnings!");
-                enabled = false;
-            }
-        }
+            GameObject gameObject = Instantiate(data.Prefab);
+            MissileWarning generated = gameObject.GetComponent<MissileWarning>();
 
-        private static MissileWarningSO s_info;
-        private static MissileWarningData s_data;
+            gameObject.SetActive(false);
 
-        public static MissileWarning Generate(MissileWarningSO info, MissileWarningData data)
-        {
-            GameObject game_object = Instantiate(info.Prefab);
-
-            game_object.SetActive(false);
-
-            MissileWarning generated = game_object.GetComponent<MissileWarning>();
-
-            s_info = info;
             s_data = data;
 
             generated.Initialize();
-            generated.Initialized = true;
 
             return generated;
         }
 
         protected override void Initialize()
         {
-            _info = s_info;
             _data = s_data;
 
-            _ended = false;
+            Cache();
 
-            Vector3 margined_screen_position = _data.ScreenPosition;
-            switch(_data.Direction)
-            {
-                case MissileDirection.UP:
-                    margined_screen_position.y += _info.ScreenMargin;
-                    break;
+            SetupRectTransform();
 
-                case MissileDirection.DOWN:
-                    margined_screen_position.y -= _info.ScreenMargin;
-                    break;
+            c_image.enabled = false;
 
-                case MissileDirection.LEFT:
-                    margined_screen_position.x -= _info.ScreenMargin;
-                    break;
+            _flashInterval = _data.FlashIntervalMS / 1000f;
 
-                case MissileDirection.RIGHT:
-                    margined_screen_position.x += _info.ScreenMargin;
-                    break;
-            }
+            Initialized = true;
+        }
 
-            _rect = GetComponent<RectTransform>();
-            _rect.SetParent(GameObject.Find("Canvas").GetComponent<RectTransform>(), false);
-            _rect.localScale = Vector3.one;
-            _rect.anchoredPosition = margined_screen_position;
+        private void Start()
+        {
+            if (_data != null)
+                return;
+            Debug.LogError("Please use the Generate function for creating Missile Warnings!");
+            enabled = false;
+        }
 
-            _image = GetComponent<RawImage>();
-            _image.enabled = false;
+        // ##### ACTIONS ##### \\
 
-            _flashInterval = _info.FlashIntervalMS / 1000f;
+        public bool Playing { get; private set; }
+
+        public void Play(MissileWarningArgs args)
+        {
+            if (Playing)
+                return;
+
+            c_rect.anchoredPosition = GetMarginedScreenPosition(args.ScreenPosition, args.Direction);
 
             gameObject.SetActive(true);
 
-            _countdownStartTime = Time.time;
+            Playing = true;
 
-            LevelController.OnResume += Resume;
-            LevelController.OnEndLevel += EndLevel;
-
-            StartCoroutine(Action());
+            _flashes = 0;
+            _flashCoroutine = StartCoroutine(Flash());
         }
 
-        private void Resume() { _countdownStartTime += LevelController.LastPauseDuration; }
-        private void EndLevel() { Destroy(gameObject); }
-
-        private void Update()
+        public void Stop()
         {
-            if (LevelController.Paused)
+            if (!Playing)
                 return;
 
-            if (_ended)
-                return;
+            OnWarningEnded = null;
 
-            if (Time.time - _countdownStartTime > _data.Duration)
-                _ended = true;
-        }
-
-        private IEnumerator Action()
-        {
-            _image.enabled = true;
-
-            yield return new WaitForSecondsPausable(_flashInterval);
-
-            if (_ended)
+            if (_flashCoroutine != null)
             {
-                if (OnWarningEnded != null)
-                    OnWarningEnded();
-                Destroy(gameObject);
+                StopCoroutine(_flashCoroutine);
+                _flashCoroutine = null;
             }
 
-            _image.enabled = false;
+            c_image.enabled = false;
+
+            gameObject.SetActive(false);
+
+            Playing = false;
+        }
+
+        private Vector2 GetMarginedScreenPosition(Vector2 screen_position, MissileDirection direction)
+        {
+            Vector2 margined_screen_position = screen_position;
+            switch (direction)
+            {
+                case MissileDirection.UP:
+                    margined_screen_position.y += _data.ScreenMargin;
+                    break;
+
+                case MissileDirection.DOWN:
+                    margined_screen_position.y -= _data.ScreenMargin;
+                    break;
+
+                case MissileDirection.LEFT:
+                    margined_screen_position.x -= _data.ScreenMargin;
+                    break;
+
+                case MissileDirection.RIGHT:
+                    margined_screen_position.x += _data.ScreenMargin;
+                    break;
+            }
+            return margined_screen_position;
+        }
+
+        // ##### FLASH ##### \\
+
+        private int _flashes;
+        private float _flashInterval;
+
+        private Coroutine _flashCoroutine;
+        private IEnumerator Flash()
+        {
+            _flashes++;
+            c_image.enabled = true;
 
             yield return new WaitForSecondsPausable(_flashInterval);
 
-            yield return Action();
+            if (_flashes == _data.FlashIntervals)
+            {
+                OnWarningEnded?.Invoke();
+                Stop();
+            }
+            else
+            {
+                c_image.enabled = false;
+
+                yield return new WaitForSecondsPausable(_flashInterval);
+
+                yield return Flash();
+            }
         }
 
-        private void OnDestroy()
+        // ##### CACHE ##### \\
+
+        private RawImage c_image;
+
+        private RectTransform c_rect;
+
+        private void Cache()
         {
-            LevelController.OnResume -= Resume;
-            LevelController.OnEndLevel -= EndLevel;
+            c_image = GetComponent<RawImage>();
+            c_rect = GetComponent<RectTransform>();
+        }
+
+        private void SetupRectTransform()
+        {
+            c_rect.SetParent(GameObject.Find("UI_CANVAS").GetComponent<RectTransform>(), false);
+            c_rect.localScale = Vector3.one;
         }
     }
 }

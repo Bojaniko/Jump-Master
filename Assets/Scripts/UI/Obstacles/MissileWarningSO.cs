@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace JumpMaster.UI.Data
@@ -9,10 +7,10 @@ namespace JumpMaster.UI.Data
     {
         public GameObject Prefab;
 
-        [Range(50, 1000)]
-        public int FlashIntervalMS = 200;
+        [Range(2, 10)] public int FlashIntervals = 3;
 
-        [Range(0f, 200f)]
-        public float ScreenMargin = 10f;
+        [Range(50, 1000)] public int FlashIntervalMS = 200;
+
+        [Range(0f, 200f)] public float ScreenMargin = 10f;
     }
 }

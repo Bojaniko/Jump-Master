@@ -15,7 +15,7 @@ namespace JumpMaster.Obstacles
         [Range(0f, 10f)]
         public float DistanceFromScreenDestroy = 3f;
 
-        public MissileWarningSO WarningInfo;
+        public MissileWarningSO WarningData;
 
         public SoundEffectInfo ThrustSFX;
         public SoundEffectInfo ExplosionSFX;

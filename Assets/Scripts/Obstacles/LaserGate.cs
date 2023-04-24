@@ -3,7 +3,6 @@ using System.Collections;
 using UnityEngine;
 
 using JumpMaster.Structure;
-using JumpMaster.LevelControllers;
 
 using Studio28.SFX;
 
@@ -20,96 +19,11 @@ namespace JumpMaster.Obstacles
 
     public class LaserGate : Obstacle<LaserGateSO, LaserGateController, LaserGateSpawnSO, LaserGateSpawnMetricsSO, LaserGateSpawnArgs>
     {
-        private float _countdownInterval;
-
-        private LineRenderer[] _laserRenderers;
-
-        private GameObject _lasers;
-
-        private GameObject _leftGate;
-        private GameObject _rightGate;
-
-        private MeshRenderer _leftGateRenderer;
-        private MeshRenderer _rightGateRenderer;
-
-        private Material[] _gateMaterials;
-
-        private Transform[] _laserPointsLeft;
-        private Transform[] _laserPointsRight;
-
-        private Coroutine _laserGateCoroutine;
-
-        private IEnumerator LaserGateLoop()
-        {
-            yield return new WaitForSecondsPausable(_countdownInterval);
-
-            SetMaterialColor("light_0", SpawnData.ActiveColor);
-
-            yield return new WaitForSecondsPausable(_countdownInterval);
-
-            SetMaterialColor("light_1", SpawnData.ActiveColor);
-
-            yield return new WaitForSecondsPausable(_countdownInterval);
-
-            SetMaterialColor("light_2", SpawnData.ActiveColor);
-
-            yield return new WaitForSecondsPausable(_countdownInterval);
-
-            SetMaterialColor("light_main", SpawnData.ActiveColor);
-
-            LaserLinesSetActive(true);
-
-            yield return new WaitForSecondsPausable(SpawnData.GateHoldTime);
-
-            ResetMaterials();
-
-            LaserLinesSetActive(false);
-
-            yield return LaserGateLoop();
-        }
-
-        protected override void SpawnInstructions()
-        {
-            transform.position = new Vector3(SpawnArgs.SpawnPosition.x, SpawnArgs.SpawnPosition.y, Data.Z_Position);
-
-            _countdownInterval = SpawnData.CountdownIntervalMS / 1000f;
-
-            BoxCollider lasersCollider = _lasers.GetComponent<BoxCollider>();
-            lasersCollider.size = new Vector3(lasersCollider.size.y, SpawnData.GateWidth, lasersCollider.size.z);
-
-            _leftGate.transform.localPosition = new Vector3(0, 0, SpawnData.GateWidth * 0.5f);
-            _rightGate.transform.localPosition = new Vector3(0, 0, -SpawnData.GateWidth * 0.5f);
-
-            CalculateLaserLines();
-            LaserLinesSetActive(false);
-            ResetMaterials();
-
-            gameObject.SetActive(true);
-
-            _laserGateCoroutine = StartCoroutine("LaserGateLoop");
-        }
-
-        protected override void DespawnInstructions()
-        {
-            StopCoroutine(_laserGateCoroutine);
-
-            gameObject.SetActive(false);
-        }
-
-        protected override bool IsDespawnable()
-        {
-            return BoundsUnderScreen;
-        }
 
         protected override void Initialize()
         {
             CacheParts();
-        }
-
-        protected override void RestartInstructions()
-        {
-            LaserLinesSetActive(false);
-            ResetMaterials();
+            OnSpawn += StartLaserGateLoop;
         }
 
         protected override void OnUpdate()
@@ -117,9 +31,100 @@ namespace JumpMaster.Obstacles
             
         }
 
+        // ##### LOOP ##### \\
+
+        private float _countdownInterval;
+        private Coroutine _laserGateCoroutine;
+
+        private void StopLaserGateLoop()
+        {
+            if (_laserGateCoroutine == null)
+                return;
+            StopCoroutine(_laserGateCoroutine);
+            _laserGateCoroutine = null;
+        }
+
+        private void StartLaserGateLoop(IObstacle obstacle)
+        {
+            if (_laserGateCoroutine != null)
+                return;
+
+            if (!Spawned)
+                return;
+
+            _countdownInterval = SpawnData.CountdownIntervalMS / 1000f;
+
+            _laserGateCoroutine = StartCoroutine("LaserGateLoop");
+        }
+
+        private IEnumerator LaserGateLoop()
+        {
+            yield return new WaitForSecondsPausable(_countdownInterval);
+
+            SetLightMaterialColor("light_0", Data.ActiveColor);
+
+            yield return new WaitForSecondsPausable(_countdownInterval);
+
+            SetLightMaterialColor("light_1", Data.ActiveColor);
+
+            yield return new WaitForSecondsPausable(_countdownInterval);
+
+            SetLightMaterialColor("light_2", Data.ActiveColor);
+
+            yield return new WaitForSecondsPausable(_countdownInterval);
+
+            SetLightMaterialColor("light_main", Data.ActiveColor);
+
+            LaserLinesSetActive(true);
+
+            yield return new WaitForSecondsPausable(SpawnData.GateHoldTime);
+
+            ResetLightMaterials();
+
+            LaserLinesSetActive(false);
+
+            yield return LaserGateLoop();
+        }
+
+        // ##### SPAWNING ##### \\
+
+        protected override void SpawnInstructions()
+        {
+            transform.position = new Vector3(SpawnArgs.SpawnPosition.x, SpawnArgs.SpawnPosition.y, Data.Z_Position);
+
+            ApplyGateWidth(SpawnData.GateWidth);
+
+            CalculateLaserLines();
+
+            LaserLinesSetActive(false);
+
+            ResetLightMaterials();
+        }
+
+        protected override void DespawnInstructions()
+        {
+            StopLaserGateLoop();
+        }
+
+        protected override bool IsDespawnable()
+        {
+            return BoundsUnderScreen;
+        }
+
+        private void ApplyGateWidth(float width)
+        {
+            BoxCollider lasersCollider = c_lasers.GetComponent<BoxCollider>();
+            lasersCollider.size = new Vector3(lasersCollider.size.y, width, lasersCollider.size.z);
+
+            c_leftGate.transform.localPosition = new Vector3(0, 0, (width * c_invertedScale) * 0.5f);
+            c_rightGate.transform.localPosition = new Vector3(0, 0, (-width * c_invertedScale) * 0.5f);
+        }
+
+        // #### LASER LINES ##### \\
+
         private void LaserLinesSetActive(bool active)
         {
-            foreach(LineRenderer lineRenderer in _laserRenderers)
+            foreach (LineRenderer lineRenderer in c_laserRenderers)
             {
                 lineRenderer.enabled = active;
             }
@@ -127,67 +132,83 @@ namespace JumpMaster.Obstacles
 
         private void CalculateLaserLines()
         {
-            for (int k = 0; k < _laserRenderers.Length; k++)
+            for (int k = 0; k < c_laserRenderers.Length; k++)
             {
-                LineRenderer current_laser = _laserRenderers[k];
+                LineRenderer current_laser = c_laserRenderers[k];
 
                 switch (current_laser.name)
                 {
                     case "laser_0":
                         current_laser.positionCount = 2;
-                        current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[0].position, _laserPointsRight[0].position });
+                        current_laser.SetPositions(new Vector3[2] { c_laserPointsLeft[0].position, c_laserPointsRight[0].position });
                         continue;
 
                     case "laser_1":
                         current_laser.positionCount = 2;
-                        current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[1].position, _laserPointsRight[1].position });
+                        current_laser.SetPositions(new Vector3[2] { c_laserPointsLeft[1].position, c_laserPointsRight[1].position });
                         continue;
 
                     case "laser_2":
                         current_laser.positionCount = 2;
-                        current_laser.SetPositions(new Vector3[2] { _laserPointsLeft[2].position, _laserPointsRight[2].position });
+                        current_laser.SetPositions(new Vector3[2] { c_laserPointsLeft[2].position, c_laserPointsRight[2].position });
                         continue;
                 }
             }
         }
 
-        private void ResetMaterials()
+        // ##### LIGHT MATERIALS ##### \\
+
+        private void ResetLightMaterials()
         {
-            foreach(Material mat in _gateMaterials)
+            foreach (Material mat in c_gateMaterials)
             {
                 if (mat.name.Contains("light"))
-                    mat.SetColor("_BaseColor", SpawnData.InactiveColor);
+                    mat.SetColor("_EmissionColor", Data.InactiveColor);
             }
-            ApplyMaterials();
+            ApplyLightMaterials();
         }
 
-        private void SetMaterialColor(string material_name, Color color)
+        private void SetLightMaterialColor(string material_name, Color color)
         {
-            foreach(Material mat in _gateMaterials)
+            foreach (Material mat in c_gateMaterials)
             {
                 if (mat.name.Contains(material_name))
                 {
-                    mat.SetColor("_BaseColor", color);
+                    mat.SetColor("_EmissionColor", color);
                     break;
                 }
             }
-            ApplyMaterials();
+            ApplyLightMaterials();
         }
 
-        private void ApplyMaterials()
+        private void ApplyLightMaterials()
         {
-            _leftGateRenderer.materials = _gateMaterials;
-            _rightGateRenderer.materials = _gateMaterials;
+            c_leftGateRenderer.materials = c_gateMaterials;
+            c_rightGateRenderer.materials = c_gateMaterials;
         }
 
         // ##### CACHE ##### \\
 
+        private GameObject c_lasers;
+        private GameObject c_leftGate;
+        private GameObject c_rightGate;
+
+        private Transform[] c_laserPointsLeft;
+        private Transform[] c_laserPointsRight;
+
+        private Material[] c_gateMaterials;
+
+        private MeshRenderer c_leftGateRenderer;
+        private MeshRenderer c_rightGateRenderer;
+
+        private LineRenderer[] c_laserRenderers;
+
         private void CacheParts()
         {
-            _laserRenderers = new LineRenderer[3];
+            c_laserRenderers = new LineRenderer[3];
 
-            _laserPointsLeft = new Transform[3];
-            _laserPointsRight = new Transform[3];
+            c_laserPointsLeft = new Transform[3];
+            c_laserPointsRight = new Transform[3];
 
             for (int i = 0; i < transform.childCount; i++)
             {
@@ -196,26 +217,26 @@ namespace JumpMaster.Obstacles
                 switch (current_child.name)
                 {
                     case "gate_left":
-                        _leftGate = current_child;
-                        _leftGateRenderer = _leftGate.GetComponent<MeshRenderer>();
-                        _gateMaterials = _leftGateRenderer.materials;
+                        c_leftGate = current_child;
+                        c_leftGateRenderer = c_leftGate.GetComponent<MeshRenderer>();
+                        c_gateMaterials = c_leftGateRenderer.materials;
 
-                        for (int k = 0; k < _leftGate.transform.childCount; k++)
+                        for (int k = 0; k < c_leftGate.transform.childCount; k++)
                         {
-                            Transform current_point = _leftGate.transform.GetChild(k);
+                            Transform current_point = c_leftGate.transform.GetChild(k);
 
                             switch (current_point.name)
                             {
                                 case "laser_point_left_0":
-                                    _laserPointsLeft[0] = current_point;
+                                    c_laserPointsLeft[0] = current_point;
                                     continue;
 
                                 case "laser_point_left_1":
-                                    _laserPointsLeft[1] = current_point;
+                                    c_laserPointsLeft[1] = current_point;
                                     continue;
 
                                 case "laser_point_left_2":
-                                    _laserPointsLeft[2] = current_point;
+                                    c_laserPointsLeft[2] = current_point;
                                     continue;
                             }
                         }
@@ -223,25 +244,25 @@ namespace JumpMaster.Obstacles
                         continue;
 
                     case "gate_right":
-                        _rightGate = current_child;
-                        _rightGateRenderer = _rightGate.GetComponent<MeshRenderer>();
+                        c_rightGate = current_child;
+                        c_rightGateRenderer = c_rightGate.GetComponent<MeshRenderer>();
 
-                        for (int k = 0; k < _rightGate.transform.childCount; k++)
+                        for (int k = 0; k < c_rightGate.transform.childCount; k++)
                         {
-                            Transform current_point = _rightGate.transform.GetChild(k);
+                            Transform current_point = c_rightGate.transform.GetChild(k);
 
                             switch (current_point.name)
                             {
                                 case "laser_point_right_0":
-                                    _laserPointsRight[0] = current_point;
+                                    c_laserPointsRight[0] = current_point;
                                     continue;
 
                                 case "laser_point_right_1":
-                                    _laserPointsRight[1] = current_point;
+                                    c_laserPointsRight[1] = current_point;
                                     continue;
 
                                 case "laser_point_right_2":
-                                    _laserPointsRight[2] = current_point;
+                                    c_laserPointsRight[2] = current_point;
                                     continue;
                             }
                         }
@@ -249,11 +270,11 @@ namespace JumpMaster.Obstacles
                         continue;
 
                     case "lasers":
-                        _lasers = current_child;
+                        c_lasers = current_child;
 
-                        for (int k = 0; k < _lasers.transform.childCount; k++)
+                        for (int k = 0; k < c_lasers.transform.childCount; k++)
                         {
-                            LineRenderer current_laser = _lasers.transform.GetChild(k).GetComponent<LineRenderer>();
+                            LineRenderer current_laser = c_lasers.transform.GetChild(k).GetComponent<LineRenderer>();
 
                             AnimationCurve laserWidthCurve = new();
                             laserWidthCurve.AddKey(0f, Data.LaserWidth);
@@ -261,18 +282,18 @@ namespace JumpMaster.Obstacles
                             switch (current_laser.name)
                             {
                                 case "laser_0":
-                                    _laserRenderers[0] = current_laser;
-                                    _laserRenderers[0].widthCurve = laserWidthCurve;
+                                    c_laserRenderers[0] = current_laser;
+                                    c_laserRenderers[0].widthCurve = laserWidthCurve;
                                     continue;
 
                                 case "laser_1":
-                                    _laserRenderers[1] = current_laser;
-                                    _laserRenderers[1].widthCurve = laserWidthCurve;
+                                    c_laserRenderers[1] = current_laser;
+                                    c_laserRenderers[1].widthCurve = laserWidthCurve;
                                     continue;
 
                                 case "laser_2":
-                                    _laserRenderers[2] = current_laser;
-                                    _laserRenderers[2].widthCurve = laserWidthCurve;
+                                    c_laserRenderers[2] = current_laser;
+                                    c_laserRenderers[2].widthCurve = laserWidthCurve;
                                     continue;
                             }
                         }

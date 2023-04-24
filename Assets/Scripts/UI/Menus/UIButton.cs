@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using JumpMaster.Controls;
+
 namespace JumpMaster.UI
 {
     [RequireComponent(typeof(UIMenu))]
@@ -9,13 +11,28 @@ namespace JumpMaster.UI
         protected abstract void DetectTap();
         protected abstract string ButtonName { get; }
 
-        public void RegisterClickEvent()
+        public void BindClickEvent()
         {
-            if (GetComponent<UIDocument>() == null)
+            if (c_document == null)
                 return;
-            if (GetComponent<UIDocument>().visualTreeAsset == null)
+            if (c_document.visualTreeAsset == null)
                 return;
-            GetComponent<UIDocument>().rootVisualElement.Q<Button>(ButtonName).clicked += DetectTap;
+            c_document.rootVisualElement.Q<Button>(ButtonName).clicked += Tap;
+        }
+
+        private void Tap()
+        {
+            DetectTap();
+            InputController.Instance.RegisterInputUI();
+        }
+
+        // ##### CACHE ##### \\
+
+        private UIDocument c_document;
+
+        private void Awake()
+        {
+            c_document = GetComponent<UIDocument>();
         }
     }
 }

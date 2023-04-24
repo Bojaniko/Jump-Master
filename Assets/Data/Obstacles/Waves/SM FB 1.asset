@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eec40d3f437ef78448ad26fd8edd08b6, type: 3}
-  m_Name: Falling Bomb Spawn Metrics
+  m_Name: SM FB 1
   m_EditorClassIdentifier: 
   _spawnAmount: 4
   _maxActiveObstacles: 3

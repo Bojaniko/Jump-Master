@@ -28,6 +28,8 @@ namespace JumpMaster.CameraControls
         {
             Instance = this;
 
+            Cache();
+
             Restart();
 
             LevelController.OnRestart += Restart;
@@ -35,7 +37,7 @@ namespace JumpMaster.CameraControls
 
         private void Restart()
         {
-            Camera.main.transform.position = new Vector3(0, 0, ZPosition);
+            c_mainCamera.transform.position = new Vector3(0, 0, ZPosition);
 
             _currentHeight = 0f;
             _startHeight = 0f;
@@ -61,6 +63,9 @@ namespace JumpMaster.CameraControls
             if (!LevelController.Started)
                 return;
 
+            if (LevelController.Ended)
+                return;
+
             if (LevelController.Paused)
                 return;
 
@@ -69,7 +74,7 @@ namespace JumpMaster.CameraControls
 
             ProcessHeightPosition(ref _currentHeight);
 
-            Camera.main.transform.position = GetCurrentHeightPosition(_startHeight, _currentHeight);
+            c_mainCamera.transform.position = GetCurrentHeightPosition(_startHeight, _currentHeight);
         }
 
         private void ProcessHeightPosition(ref float current_height)
@@ -78,14 +83,14 @@ namespace JumpMaster.CameraControls
 
             if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMPING) ||
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING) ||
-                MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
+                MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.BOUNCING))
             {
                 if (MovementController.Instance.BoundsScreenPosition.max.y < Screen.height - MaxScreenHeightPosition)
                     goto FloatCheck;
 
                 float playerHeightDifference = MovementController.Instance.Bounds.bounds.max.y -
-                    Camera.main.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
-                    Vector3.Distance(Camera.main.transform.position, MovementController.Instance.transform.position))).y;
+                    c_mainCamera.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
+                    Vector3.Distance(c_mainCamera.transform.position, MovementController.Instance.transform.position))).y;
 
                 height_step = playerHeightDifference * ReachEdgeSpeed * Time.deltaTime;
             }
@@ -99,10 +104,19 @@ namespace JumpMaster.CameraControls
 
         private Vector3 GetCurrentHeightPosition(float start_height, float current_height)
         {
-            Vector3 camera_position = Camera.main.transform.position;
+            Vector3 camera_position = c_mainCamera.transform.position;
             camera_position.y = start_height + current_height;
 
             return camera_position;
+        }
+
+        // ##### CACHE ##### \\
+
+        private Camera c_mainCamera;
+
+        private void Cache()
+        {
+            c_mainCamera = Camera.main;
         }
     }
 }

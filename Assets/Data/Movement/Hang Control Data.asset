@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1ddf33e5569e8840a4c67c0dacebd52, type: 3}
   m_Name: Hang Control Data
   m_EditorClassIdentifier: 
-  MinDuration: 0.5
+  MinDuration: 0.2
   StickDistanceScreen: 20
-  MinStickVelocity: 1
+  MinStickVelocity: 0.5

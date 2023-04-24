@@ -40,69 +40,94 @@ namespace JumpMaster.Controls
 
         private delegate void InputQueueHandler(InputAction.CallbackContext context);
 
-        private bool m_detectedInput;
-        private Dictionary<InputQueueHandler, InputAction.CallbackContext> m_inputCallbacks;
+        private bool _detectedInputUI;
 
-        private void Update()
-        {
-            if (!m_detectedInput)
-                return;
-
-            ProcessAllInputCallbacks();
-
-            m_detectedInput = false;
-        }
+        private bool _detectedInput;
+        private Dictionary<InputQueueHandler, InputAction.CallbackContext> _inputCallbacks;
 
         private void OnEnable()
         {
-            m_detectedInput = false;
+            _detectedInputUI = false;
+            _detectedInput = false;
 
-            m_inputCallbacks = new();
+            _inputCallbacks = new();
 
-            RegisterAllInputCallbacks();
+            BindAllInputCallbacks();
         }
 
         private void OnDisable()
         {
-            m_inputCallbacks.Clear();
-            m_inputCallbacks = null;
+            _inputCallbacks.Clear();
+            _inputCallbacks = null;
         }
 
-        private void ProcessAllInputCallbacks()
+        private void Update()
+        {
+            if (!_detectedInput)
+                return;
+
+            if (_detectedInputUI)
+            {
+                ClearDetectedInputCallbacks();
+                return;
+            }
+
+            ProcessDetectedInputCallbacks();
+        }
+
+        private void LateUpdate()
+        {
+            if (_detectedInputUI)
+                _detectedInputUI = false;
+        }
+
+        private void ProcessDetectedInputCallbacks()
         {
             InputAction.CallbackContext context;
-            foreach (InputQueueHandler callback in m_inputCallbacks.Keys)
+            foreach (InputQueueHandler callback in _inputCallbacks.Keys)
             {
-                if (m_inputCallbacks.TryGetValue(callback, out context))
-                    callback.Invoke(context);
+                if (_inputCallbacks.TryGetValue(callback, out context))
+                    callback?.Invoke(context);
             }
-            m_inputCallbacks.Clear();
+            ClearDetectedInputCallbacks();
         }
 
-        private void RegisterAllInputCallbacks()
+        private void ClearDetectedInputCallbacks()
         {
-            _input.Movement.Contact.performed += ctx => RegisterInputCallback(StartTouch, ctx);
-            _input.Movement.Contact.canceled += ctx => RegisterInputCallback(EndTouch, ctx);
-
-            _input.Movement.Touch.performed += ctx => RegisterInputCallback(Touch, ctx);
-            _input.Movement.Touch.started += ctx => RegisterInputCallback(HoldStart, ctx);
-            _input.Movement.Touch.canceled += ctx => RegisterInputCallback(HoldCancel, ctx);
+            _inputCallbacks.Clear();
+            _detectedInput = false;
         }
 
-        private void RegisterInputCallback(InputQueueHandler callback_delegate, InputAction.CallbackContext callback_context)
+        public void RegisterInputUI()
         {
-            if (!m_inputCallbacks.TryAdd(callback_delegate, callback_context))
+            _detectedInputUI = true;
+        }
+
+        // ##### BINDING ##### \\
+
+        private void BindAllInputCallbacks()
+        {
+            _input.Movement.Contact.performed += ctx => BindInputCallback(StartTouch, ctx);
+            _input.Movement.Contact.canceled += ctx => BindInputCallback(EndTouch, ctx);
+
+            _input.Movement.Touch.performed += ctx => BindInputCallback(Touch, ctx);
+            _input.Movement.Touch.started += ctx => BindInputCallback(HoldStart, ctx);
+            _input.Movement.Touch.canceled += HoldCancel;
+        }
+
+        private void BindInputCallback(InputQueueHandler callback_delegate, InputAction.CallbackContext callback_context)
+        {
+            if (!_inputCallbacks.TryAdd(callback_delegate, callback_context))
                 return;
-            m_detectedInput = true;
+            _detectedInput = true;
         }
+
+        // ##### INPUT CALLBACKS ##### \\
 
         private void HoldCancel(InputAction.CallbackContext context)
         {
             if (context.interaction is SlowTapInteraction)
-            {
-                if (OnHoldCancelled != null)
-                    OnHoldCancelled();
-            }
+                OnHoldCancelled?.Invoke();
         }
 
         private void HoldStart(InputAction.CallbackContext context)
@@ -119,33 +144,25 @@ namespace JumpMaster.Controls
 
         private void Touch(InputAction.CallbackContext context)
         {
-            if (SwipeDetector.Instance.DetectedSwipes.Contains((float)context.startTime))
+            if (SwipeDetector.Instance.IsSwipeDetected((float)context.startTime))
                 return;
             if (context.interaction is SlowTapInteraction)
-            {
-                if (OnHoldPerformed != null)
-                    OnHoldPerformed();
-            }
+                OnHoldPerformed?.Invoke();
             if (context.interaction is TapInteraction)
-            {
-                if (OnTap != null)
-                    OnTap();
-            }
+                OnTap?.Invoke();
         }
 
         private void StartTouch(InputAction.CallbackContext context)
         {
-            if (OnTouchStart != null)
-            {
-                OnTouchStart(_input.Movement.Position.ReadValue<Vector2>(), (float)context.startTime);
-            }
+            OnTouchStart?.Invoke(_input.Movement.Position.ReadValue<Vector2>(), (float)context.startTime);
         }
 
         private void EndTouch(InputAction.CallbackContext context)
         {
-            if (OnTouchEnd != null)
-                OnTouchEnd(_input.Movement.Position.ReadValue<Vector2>(), (float)context.time);
+            OnTouchEnd?.Invoke(_input.Movement.Position.ReadValue<Vector2>(), (float)context.time);
         }
+
+        // ##### EVENTS ##### \\
 
         public delegate void SwipeEventHandler(Vector2 position, float time);
         public event SwipeEventHandler OnTouchStart;

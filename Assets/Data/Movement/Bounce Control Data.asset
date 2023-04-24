@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BounceForce: 10
   BounceDistance: 3
+  ExplosionVelocityDrag: 0.5
   MinStrengthPercentage: 0.2
   MinExitDistancePercentage: 0.8

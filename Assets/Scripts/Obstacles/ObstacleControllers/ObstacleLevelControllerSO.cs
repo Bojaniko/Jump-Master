@@ -1,7 +1,5 @@
 using UnityEngine;
 
-using JumpMaster.LevelControllers.Obstacles;
-
 namespace JumpMaster.Obstacles
 {
     [CreateAssetMenu(fileName = "Obstacle Controller Data", menuName = "Obstacle Controller")]

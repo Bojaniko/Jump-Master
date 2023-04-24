@@ -22,87 +22,6 @@ namespace JumpMaster.Obstacles
 
     public class FallingBomb : Obstacle<FallingBombSO, FallingBombController, FallingBombSpawnSO, FallingBombSpawnMetricsSO, FallingBombArgs>
     {
-        private float _armingDuration;
-        private float _currentDetectionShowTime;
-        private float _detectionShowDistanceScreen;
-
-        private Coroutine _explodeCoroutine;
-
-        protected override void SpawnInstructions()
-        {
-            _currentDetectionShowTime = c_detectionShowDuration;
-            c_bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
-            c_detectionRenderer.material.SetFloat("_Transparency", 1f);
-
-            Vector2 pos_screen_margined = SpawnArgs.ScreenPosition;
-            pos_screen_margined.y += (BoundsScreenPosition.max.y - BoundsScreenPosition.min.y);
-            Vector3 pos_world = c_camera.ScreenToWorldPoint(pos_screen_margined);
-            pos_world.z = Data.Z_Position;
-            transform.position = pos_world;
-
-            c_sphereCol.radius = SpawnData.DetectionRadius;
-            c_detectionRenderer.transform.localScale = Vector3.one * (1 / Data.Scale) * SpawnData.DetectionRadius;
-            _detectionShowDistanceScreen = Vector2.Distance(c_camera.WorldToScreenPoint(Vector2.zero), c_camera.WorldToScreenPoint(new Vector2(0, SpawnData.DetectionShowDistance)));
-            _armingDuration = SpawnData.ArmingDurationMS / 1000f;
-
-            gameObject.SetActive(true);
-        }
-
-        protected override void DespawnInstructions()
-        {
-            if (_explodeCoroutine != null)
-                _explodeCoroutine = null;
-
-            gameObject.SetActive(false);
-        }
-
-        protected override bool IsDespawnable()
-        {
-            if (_explodeCoroutine != null) return false;
-            return BoundsUnderScreen;
-        }
-
-        private IEnumerator Explode()
-        {
-            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
-            c_bombLightRef.SetColor("_Color", Data.ArmedLightColor);
-
-            yield return new WaitForSecondsPausable(_armingDuration);
-
-            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
-            c_animator.Play("explode", 1);
-
-            yield return new WaitForSecondsPausable(_armingDuration);
-
-            SFXController.Instance.PlaySound(Data.ExplosionSound, gameObject);
-            Instantiate(Data.ExplosionPrefab, transform.position - Vector3.forward * 0.2f, Quaternion.identity);
-            DamageController.LogDamage(new DamageInfo(transform.position, SpawnData.DetectionRadius, 30f));
-
-            yield return new WaitForSeconds(c_gameObjectDestroyDuration);
-
-            Despawn();
-        }
-
-        private void ShowDetection()
-        {
-            _currentDetectionShowTime -= 1f * Time.deltaTime;
-
-            if (_currentDetectionShowTime <= 0.0f)
-                _currentDetectionShowTime = 0.0f;
-
-            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
-        }
-
-        private void HideDetection()
-        {
-            _currentDetectionShowTime += 1f * Time.deltaTime;
-
-            if (_currentDetectionShowTime >= c_detectionShowDuration)
-                _currentDetectionShowTime = c_detectionShowDuration;
-
-            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
-        }
-
         protected override void Initialize()
         {
             LevelController.OnPause += Pause;
@@ -125,20 +44,99 @@ namespace JumpMaster.Obstacles
 
         private void EndLevel()
         {
-            if (!gameObject.activeSelf)
-                return;
-
-            _explodeCoroutine = StartCoroutine("Explode");
-        }
-
-        protected override void RestartInstructions()
-        {
-            _currentDetectionShowTime = c_detectionShowDuration;
-            c_bombLightRef.SetColor("_Color", Data.UnarmedLightColor);
-            c_detectionRenderer.material.SetFloat("_Transparency", 1f);
+            StartExplosion();
         }
 
         protected override void OnUpdate()
+        {
+            Detection();
+        }
+
+        private void FixedUpdate()
+        {
+            if (LevelController.Paused)
+                return;
+
+            if (_explodeCoroutine != null)
+                return;
+
+            c_rigidbody.velocity = Vector3.down * c_animator.GetFloat("Falling");
+        }
+
+        // ##### SPAWNING ##### \\
+        
+        protected override void SpawnInstructions()
+        {
+            transform.position = GetWorldSpawnPosition(SpawnArgs.ScreenPosition);
+
+            ResetDetection(SpawnData);
+            ResetExplosion(SpawnData);
+
+            
+        }
+
+        protected override void DespawnInstructions()
+        {
+            if (_explodeCoroutine != null)
+            {
+                StopCoroutine(_explodeCoroutine);
+                _explodeCoroutine = null;
+            }
+        }
+
+        protected override bool IsDespawnable()
+        {
+            if (_explodeCoroutine != null) return false;
+            return BoundsUnderScreen;
+        }
+
+        private Vector3 GetWorldSpawnPosition(Vector3 screen_position)
+        {
+            Vector2 pos_screen_margined = screen_position;
+            pos_screen_margined.y += (BoundsScreenPosition.max.y - BoundsScreenPosition.min.y);
+
+            Vector3 pos_world = c_camera.ScreenToWorldPoint(pos_screen_margined);
+            pos_world.z = Data.Z_Position;
+
+            return pos_world;
+        }
+
+        // ##### DETECTION CIRCLE ##### \\
+
+        private float _currentDetectionShowTime;
+        private float _detectionShowDistanceScreen;
+
+        private void ResetDetection(FallingBombSpawnSO spawn_data)
+        {
+            _currentDetectionShowTime = c_detectionShowDuration;
+            _detectionShowDistanceScreen = Vector2.Distance(Vector2.zero, c_camera.WorldToScreenPoint(new Vector2(0, spawn_data.DetectionShowDistance)));
+
+            c_sphereCol.radius = spawn_data.DetectionRadius;
+            c_detectionRenderer.material.SetFloat("_Transparency", 1f);
+            c_detectionRenderer.transform.localScale = (Vector3.one * c_invertedScale) * spawn_data.DetectionRadius;
+        }
+
+        private void ShowDetection()
+        {
+            _currentDetectionShowTime -= 1f * Time.deltaTime;
+
+            if (_currentDetectionShowTime <= 0.0f)
+                _currentDetectionShowTime = 0.0f;
+
+            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
+        }
+
+        private void HideDetection()
+        {
+            _currentDetectionShowTime += 1f * Time.deltaTime;
+
+            if (_currentDetectionShowTime >= c_detectionShowDuration)
+                _currentDetectionShowTime = c_detectionShowDuration;
+
+            c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
+        }
+
+        private void Detection()
         {
             if (_explodeCoroutine == null)
             {
@@ -157,23 +155,59 @@ namespace JumpMaster.Obstacles
             }
         }
 
-        private void FixedUpdate()
-        {
-            if (LevelController.Paused)
-                return;
+        // ##### EXPLOSION ##### \\
 
-            if (_explodeCoroutine != null)
-                return;
-
-            c_rigidbody.velocity = Vector3.down * c_animator.GetFloat("Falling");
-        }
+        private float _armingDuration;
+        private Coroutine _explodeCoroutine;
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
             {
-                _explodeCoroutine = StartCoroutine("Explode");
+                StartExplosion();
             }
+        }
+
+        private void ResetExplosion(FallingBombSpawnSO spawn_data)
+        {
+            _armingDuration = spawn_data.ArmingDurationMS / 1000f;
+
+            c_bombLightRef.SetColor("_EmissionColor", Data.UnarmedLightColor);
+        }
+
+        private void StartExplosion()
+        {
+            if (!gameObject.activeSelf)
+                return;
+
+            if (_explodeCoroutine != null)
+                return;
+
+            _explodeCoroutine = StartCoroutine("Explode");
+        }
+
+        private IEnumerator Explode()
+        {
+            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
+            c_bombLightRef.SetColor("_EmissionColor", Data.ArmedLightColor);
+
+            yield return new WaitForSecondsPausable(_armingDuration);
+
+            SFXController.Instance.PlaySound(Data.ArmingBeepSound, gameObject);
+            c_animator.Play("explode", 1);
+
+            yield return new WaitForSecondsPausable(_armingDuration);
+
+            SFXController.Instance.PlaySound(Data.ExplosionSound, gameObject);
+
+            Instantiate(Data.ExplosionPrefab, transform.position - Vector3.forward * 0.2f, Quaternion.identity);
+
+            Vector3 direction = transform.position - MovementController.Instance.transform.position;
+            DamageController.LogDamage(new DamageInfo(transform.position, direction, SpawnData.DamageRadius, SpawnData.Damage, DamageType.EXPLOSION));
+
+            yield return new WaitForSeconds(c_gameObjectDestroyDuration);
+
+            Despawn();
         }
 
         // ##### CACHE ##### \\
@@ -206,6 +240,11 @@ namespace JumpMaster.Obstacles
                 {
                     c_detectionRenderer = transform.GetChild(child).GetComponent<Renderer>();
                     c_detectionRenderer.material.SetFloat("_Transparency", _currentDetectionShowTime / c_detectionShowDuration);
+                }
+                if (transform.GetChild(child).name.Equals("parachute"))
+                {
+                    foreach (Material material in transform.GetChild(child).GetComponent<Renderer>().materials)
+                        material.SetFloat("_Scale", Data.Scale);
                 }
             }
         }

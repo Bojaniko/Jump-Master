@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9fc73eb645b53ae45b3d0ee17212e846, type: 3}
-  m_Name: FBM1CsData
+  m_Name: OCFBMLG1
   m_EditorClassIdentifier: 
   SelectedObstacle: 2
-  SelectedObstacles: 0000000002000000
+  SelectedObstacles: 000000000100000002000000
   FallingBomb: {fileID: 11400000, guid: fa68de5124c78734f940d22204017708, type: 2}
-  LaserGate: {fileID: 0}
+  LaserGate: {fileID: 11400000, guid: 456dca5210d715f41b84403fd0ac1613, type: 2}
   Missile: {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}

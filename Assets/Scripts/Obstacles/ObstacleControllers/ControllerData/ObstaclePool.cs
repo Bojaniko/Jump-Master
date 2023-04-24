@@ -26,8 +26,7 @@ namespace JumpMaster.Obstacles
             _activeObstacles.Remove(type_spawn);
             _obstacleQueue.Enqueue(type_spawn);
 
-            if (OnActiveObstaclesChange != null)
-                OnActiveObstaclesChange();
+            OnActiveObstaclesChange?.Invoke();
         }
 
         public ObstacleType PullObstacle()
@@ -38,8 +37,7 @@ namespace JumpMaster.Obstacles
             ObstacleType spawn = _obstacleQueue.Dequeue();
             _activeObstacles.Add(spawn);
 
-            if (OnActiveObstaclesChange != null)
-                OnActiveObstaclesChange();
+            OnActiveObstaclesChange?.Invoke();
 
             return spawn;
         }

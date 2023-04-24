@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Falling Bomb Spawn Data 0
   m_EditorClassIdentifier: 
   FallSpeed: 1.5
-  DetectionRadius: 3.5
-  DetectionShowDistance: 5.5
+  DetectionRadius: 5
+  DetectionShowDistance: 6
   ArmingDurationMS: 800
+  Damage: 30
+  DamageRadius: 5

@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using Studio28.SFX;
 
 using JumpMaster.Obstacles;
+using JumpMaster.LevelControllers;
 
 namespace JumpMaster.SFX
 {
@@ -13,49 +14,51 @@ namespace JumpMaster.SFX
 
         private MissileThrust_SFX_SC_Args _data;
 
-        private Missile _callerMissile;
-
         protected override void InitializeSourceController(SFXSourceControllerArgs args)
         {
             _data = (MissileThrust_SFX_SC_Args)args;
 
             if (_data.Caller == null)
             {
-                EndSFX();
+                Destroy(gameObject);
                 return;
             }
 
-            _callerMissile = _data.Caller.GetComponent<Missile>();
+            Cache();
 
-            _callerMissile.OnExplode += EndSFX;
+            c_callerMissile.OnExplode += EndSFX;
+
+            LevelController.OnRestart += EndSFX;
+            LevelController.OnEndLevel += EndSFX;
+            LevelController.OnPause += Pause;
 
             Source.volume = 0f;
         }
 
         private void Update()
         {
+            if (LevelController.Paused)
+                return;
+
             if (Source.isPlaying)
             {
-                Vector3 missilePositionOnScreen = Camera.main.WorldToScreenPoint(_data.Caller.transform.position);
-
                 float volume = 0f;
-
                 float distanceToCenter = 0f;
 
                 if (_data.Direction.Equals(MissileDirection.UP) || _data.Direction.Equals(MissileDirection.DOWN))
                 {
-                    distanceToCenter = Vector3.Distance(missilePositionOnScreen,
-                            new Vector3(missilePositionOnScreen.x, Screen.height * 0.5f, missilePositionOnScreen.z));
+                    distanceToCenter = Vector2.Distance(c_callerMissile.ScreenPosition,
+                            new Vector2(c_callerMissile.ScreenPosition.x, c_screenHeightHalf));
 
-                    distanceToCenter /= (Screen.height * 0.5f);
+                    distanceToCenter /= c_screenHeightHalf;
                 }
 
                 if (_data.Direction.Equals(MissileDirection.LEFT) || _data.Direction.Equals(MissileDirection.RIGHT))
                 {
-                    distanceToCenter = Vector3.Distance(missilePositionOnScreen,
-                            new Vector3(Screen.width * 0.5f, missilePositionOnScreen.y, missilePositionOnScreen.z));
+                    distanceToCenter = Vector2.Distance(c_callerMissile.ScreenPosition,
+                            new Vector2(c_screenWidthHalf, c_callerMissile.ScreenPosition.y));
 
-                    distanceToCenter /= (Screen.width * 0.5f);
+                    distanceToCenter /= c_screenWidthHalf;
                 }
 
                 if (distanceToCenter <= 1f)
@@ -73,7 +76,7 @@ namespace JumpMaster.SFX
 
                 Source.volume = volume;
             }
-            else if (_callerMissile.Spawned) Source.Play();
+            else if (c_callerMissile.Spawned) Source.Play();
 
             if (_data.Caller.activeInHierarchy == false)
             {
@@ -84,10 +87,36 @@ namespace JumpMaster.SFX
             }
         }
 
+        private void Pause()
+        {
+            Source.volume = 0f;
+        }
+
         private void EndSFX()
         {
-            _callerMissile.OnExplode -= EndSFX;
+            if (c_callerMissile != null)
+                c_callerMissile.OnExplode -= EndSFX;
+
+            LevelController.OnRestart -= EndSFX;
+            LevelController.OnEndLevel -= EndSFX;
+            LevelController.OnPause -= Pause;
+
             Destroy(gameObject);
+        }
+
+        // ##### CACHE ##### \\
+
+        private float c_screenWidthHalf;
+        private float c_screenHeightHalf;
+
+        private Missile c_callerMissile;
+
+        private void Cache()
+        {
+            c_screenWidthHalf = Screen.width * 0.5f;
+            c_screenHeightHalf = Screen.height * 0.5f;
+
+            c_callerMissile = _data.Caller.GetComponent<Missile>();
         }
     }
 

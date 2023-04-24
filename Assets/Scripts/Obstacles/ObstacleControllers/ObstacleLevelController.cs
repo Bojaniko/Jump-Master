@@ -134,6 +134,9 @@ namespace JumpMaster.Obstacles
             if (!LevelController.Started)
                 return;
 
+            if (LevelController.Ended)
+                return;
+
             if (LevelController.Paused)
                 return;
 

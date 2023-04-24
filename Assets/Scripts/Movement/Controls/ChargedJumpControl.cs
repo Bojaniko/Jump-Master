@@ -5,7 +5,7 @@ using JumpMaster.Controls;
 
 namespace JumpMaster.Movement
 {
-    public class ChargedJumpControl : MovementControl<ChargedJumpControlDataSO>, ITransitionable, IInputableControl
+    public class ChargedJumpControl : MovementControl<ChargedJumpControlDataSO, ChargedJumpControlArgs>, ITransitionable, IInputableControl, IDirectional
     {
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
@@ -13,6 +13,16 @@ namespace JumpMaster.Movement
         private float _chargeStartTime;
 
         private readonly JumpControl _jumpControl;
+
+        public MovementDirection Direction
+        {
+            get
+            {
+                if (_controlArgs == null)
+                    return MovementDirection.Zero;
+                return _controlArgs.Direction;
+            }
+        }
 
         public ChargedJumpControl(MovementController controller, ChargedJumpControlDataSO data, JumpControl jump_control) : base(controller, data)
         {
@@ -78,12 +88,11 @@ namespace JumpMaster.Movement
             if (Controller.ControlledRigidbody.velocity.y > ControlData.EndForce)
                 return;
 
-            if (OnTransitionable != null)
-            {
-                MovementControlArgs start_args = new(Controller.ControlledRigidbody, ControlArgs.Direction, 1f);
-                OnTransitionable(Controller.GetControlByState(TransitionState), start_args);
-            }
+            FallControlArgs start_args = new(new(Controller));
+            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), start_args);
         }
+
+        // ##### CHARGED JUMP INPUTED ##### \\
 
         private void StartJumpCharge(Vector2 position, float min_hold_duration)
         {
@@ -97,13 +106,12 @@ namespace JumpMaster.Movement
 
             float duration_percentage = (Time.time - _chargeStartTime) / ControlData.MaxChargeDuration;
 
-            if (duration_percentage == 0f)
+            if (duration_percentage <= 0f)
                 return;
 
             duration_percentage = Mathf.Clamp(duration_percentage, ControlData.MinChargePercentage, 1f);
 
-            if (OnInputDetected != null)
-                OnInputDetected(this, new(Controller.ControlledRigidbody, MovementDirection.Up, duration_percentage));
+            OnInputDetected?.Invoke(this, new ChargedJumpControlArgs(new(Controller, duration_percentage), MovementDirection.Up));
         }
     }
 }

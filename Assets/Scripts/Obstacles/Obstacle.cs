@@ -71,11 +71,9 @@ namespace JumpMaster.Obstacles
 
         private void Restart()
         {
-            RestartInstructions();
             Despawn();
         }
 
-        protected abstract void RestartInstructions();
         protected abstract void SpawnInstructions();
         protected abstract void DespawnInstructions();
         protected abstract void OnUpdate();
@@ -112,9 +110,11 @@ namespace JumpMaster.Obstacles
 
             SpawnInstructions();
 
-            OnSpawn?.Invoke(this);
+            gameObject.SetActive(true);
 
             Spawned = true;
+
+            OnSpawn?.Invoke(this);
         }
 
         public void Despawn()
@@ -124,13 +124,14 @@ namespace JumpMaster.Obstacles
 
             DespawnInstructions();
 
-            OnDespawn?.Invoke(this);
-
             gameObject.SetActive(false);
+
+            Spawned = false;
+
+            OnDespawn?.Invoke(this);
 
             SpawnData = null;
             SpawnArgs = null;
-            Spawned = false;
         }
 
         // ##### SCREEN POSITION ##### \\
@@ -150,6 +151,9 @@ namespace JumpMaster.Obstacles
         }
 
         // ##### CACHED COMPONENTS ##### \\
+
+        protected float c_invertedScale { get; private set; }
+
         protected Camera c_camera { get; private set; }
         protected Animator c_animator { get; private set; }
         protected Rigidbody c_rigidbody { get; private set; }
@@ -158,6 +162,8 @@ namespace JumpMaster.Obstacles
 
         private void CacheComponents()
         {
+            c_invertedScale = 1f / Data.Scale;
+
             c_camera = Camera.main;
             c_animator = GetComponent<Animator>();
             c_rigidbody = GetComponent<Rigidbody>();

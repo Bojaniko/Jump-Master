@@ -5,7 +5,6 @@ using UnityEngine;
 using Studio28.SFX;
 
 using JumpMaster.SFX;
-using JumpMaster.Movement;
 using JumpMaster.LevelControllers;
 using JumpMaster.UI;
 
@@ -24,27 +23,41 @@ namespace JumpMaster.Obstacles
 
     public class Missile : Obstacle<MissileSO, MissileController, MissileSpawnSO, MissileSpawnMetricsSO, MissileSpawnArgs>
     {
-        private Vector3 _direction;
-        private Coroutine _explodeCoroutine;
-        private MissileWarning _warning;
-
-        public delegate void ExplosionEventHandler();
-        public event ExplosionEventHandler OnExplode;
-
         protected override void Initialize()
         {
+            Cache();
+
+            c_particles.transform.localScale = Vector3.one * Data.Scale;
+
             LevelController.OnPause += Pause;
+            LevelController.OnResume += Resume;
+            LevelController.OnEndLevel += EndLevel;
         }
 
         private void Pause()
         {
+            c_particles.Pause();
             c_rigidbody.velocity = Vector3.zero;
             c_animator.SetFloat("SwirlMult", 0f);
         }
 
-        protected override void RestartInstructions()
+        private void Resume()
         {
+            if (c_warning.Playing)
+                return;
 
+            c_particles.Play();
+            c_animator.SetFloat("SwirlMult", 1f);
+        }
+
+        private void EndLevel()
+        {
+            if (c_warning.Playing)
+            {
+                c_warning.Stop();
+                return;
+            }
+            StartExplosion();
         }
 
         protected override void OnUpdate()
@@ -52,9 +65,70 @@ namespace JumpMaster.Obstacles
             
         }
 
+        void FixedUpdate()
+        {
+            if (LevelController.Paused)
+                return;
+
+            if (_explodeCoroutine != null)
+                return;
+
+            if (c_warning.Playing)
+                return;
+
+            c_rigidbody.velocity = _direction * SpawnData.Speed;
+        }
+
+        // ##### SPAWNING ##### \\
+
+        private Vector3 _direction;
+
         protected override void SpawnInstructions()
         {
+            c_animator.SetFloat("SwirlMult", 1f);
+            c_renderer.enabled = false;
+
+            ApplyDirection(SpawnArgs.Direction);
+
+            StartWarning(SpawnArgs);
+        }
+
+        protected override void DespawnInstructions()
+        {
+            if (_explodeCoroutine != null)
+            {
+                StopCoroutine(_explodeCoroutine);
+                _explodeCoroutine = null;
+            }
+        }
+
+        protected override bool IsDespawnable()
+        {
+            if (_explodeCoroutine != null)
+                return false;
+            if (c_warning.Playing)
+                return false;
+
             switch (SpawnArgs.Direction)
+            {
+                case MissileDirection.UP:
+                    return BoundsOverScreen;
+
+                case MissileDirection.DOWN:
+                    return BoundsUnderScreen;
+
+                case MissileDirection.LEFT:
+                    return BoundsLeftOfScreen;
+
+                case MissileDirection.RIGHT:
+                    return BoundsRightOfScreen;
+            }
+            return false;
+        }
+
+        private void ApplyDirection(MissileDirection direction)
+        {
+            switch (direction)
             {
                 case MissileDirection.UP:
                     _direction = Vector3.up;
@@ -86,50 +160,12 @@ namespace JumpMaster.Obstacles
                     c_bounds.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
                     break;
             }
-
-            c_animator.SetFloat("SwirlMult", 1f);
-
-            MissileWarningData warning_data = new MissileWarningData(SpawnArgs.ScreenPosition,
-                SpawnArgs.Direction, SpawnData.GetCountdown());
-
-            _warning = MissileWarning.Generate(Data.WarningInfo, warning_data);
-
-            _warning.OnWarningEnded += EndWarning;
         }
 
-        protected override void DespawnInstructions()
+        private Vector3 GetWorldSpawnPosition(Vector3 screen_position, MissileDirection direction)
         {
-            _explodeCoroutine = null;
-        }
-
-        protected override bool IsDespawnable()
-        {
-            if (_warning != null)
-                return false;
-
-            switch (SpawnArgs.Direction)
-            {
-                case MissileDirection.UP:
-                    return BoundsOverScreen;
-
-                case MissileDirection.DOWN:
-                    return BoundsUnderScreen;
-
-                case MissileDirection.LEFT:
-                    return BoundsLeftOfScreen;
-
-                case MissileDirection.RIGHT:
-                    return BoundsRightOfScreen;
-
-                default:
-                    return true;
-            }
-        }
-
-        private void EndWarning()
-        {
-            Vector3 position_world = c_camera.ScreenToWorldPoint(SpawnArgs.ScreenPosition);
-            switch (SpawnArgs.Direction)
+            Vector3 position_world = c_camera.ScreenToWorldPoint(screen_position);
+            switch (direction)
             {
                 case MissileDirection.UP:
                     position_world.y -= SpawnMetrics.SpawnOffset;
@@ -148,14 +184,53 @@ namespace JumpMaster.Obstacles
                     break;
             }
             position_world.z = transform.position.z;
-            transform.position = position_world;
+            return position_world;
+        }
 
-            _warning.OnWarningEnded -= EndWarning;
-            _warning = null;
+        // ##### WARNING ##### \\
+
+        private void StartWarning(MissileSpawnArgs spawn_args)
+        {
+            MissileWarningArgs warningData = new(spawn_args.ScreenPosition, spawn_args.Direction);
+
+            c_warning.OnWarningEnded += EndWarning;
+            c_warning.Play(warningData);
+        }
+
+        private void EndWarning()
+        {
+            transform.position = GetWorldSpawnPosition(SpawnArgs.ScreenPosition, SpawnArgs.Direction);
 
             SFXController.Instance.PlayLoopSound<MissileThrustSFXSourceController>(Data.ThrustSFX, new MissileThrust_SFX_SC_Args(gameObject, SpawnArgs.Direction));
+            c_renderer.enabled = true;
+            c_particles.Play();
+        }
 
-            gameObject.SetActive(true);
+        // ##### EXPLOSION ##### \\
+
+        private Coroutine _explodeCoroutine;
+
+        public delegate void ExplosionEventHandler();
+        public event ExplosionEventHandler OnExplode;
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (c_warning.Playing)
+                return;
+
+            if (other.gameObject.CompareTag("Player"))
+            {
+                StartExplosion();
+            }
+        }
+
+        private void StartExplosion()
+        {
+            if (!gameObject.activeSelf)
+                return;
+            if (_explodeCoroutine != null)
+                return;
+            _explodeCoroutine = StartCoroutine("Explode");
         }
 
         private IEnumerator Explode()
@@ -168,28 +243,31 @@ namespace JumpMaster.Obstacles
 
             SFXController.Instance.PlaySound(Data.ExplosionSFX, gameObject);
 
-            if (OnExplode != null)
-                OnExplode();
+            OnExplode?.Invoke();
 
             yield return new WaitForSeconds(Data.GameObjectDestroyDelayMS / 1000f);
 
             Despawn();
         }
 
-        void FixedUpdate()
-        {
-            if (LevelController.Paused)
-                return;
+        // ##### CACHE ##### \\
 
-            if (_explodeCoroutine == null)
-                c_rigidbody.velocity = _direction * SpawnData.Speed;
-        }
+        private MissileWarning c_warning;
 
-        private void OnTriggerEnter(Collider other)
+        private MeshRenderer c_renderer;
+
+        private ParticleSystem c_particles;
+
+        private void Cache()
         {
-            if (other.gameObject.Equals(MovementController.Instance))
+            c_warning = MissileWarning.Generate(Data.WarningData);
+
+            for (int i = 0; i < transform.childCount; i++)
             {
-                _explodeCoroutine = StartCoroutine("Explode");
+                if (transform.GetChild(i).name.Equals("missile"))
+                    c_renderer = transform.GetChild(i).GetComponent<MeshRenderer>();
+                if (transform.GetChild(i).name.Equals("thrust_particles"))
+                    c_particles = transform.GetChild(i).GetComponent<ParticleSystem>();
             }
         }
     }

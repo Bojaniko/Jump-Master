@@ -5,11 +5,23 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public class FloatControl : MovementControl<FloatControlDataSO>, ITransitionable, IInputableControl
+    public class FloatControl : MovementControl<FloatControlDataSO, FloatControlArgs>, ITransitionable, IInputableControl, IDirectional
     {
         public bool ChargingJump { get; private set; }
 
         private float _pauseTime;
+
+        private Vector2 _direction;
+
+        public MovementDirection Direction
+        {
+            get
+            {
+                if (_controlArgs == null)
+                    return MovementDirection.Zero;
+                return _controlArgs.Direction;
+            }
+        }
 
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
@@ -33,6 +45,8 @@ namespace JumpMaster.Movement
         protected override void StartControl()
         {
             Controller.ControlledRigidbody.useGravity = false;
+
+            _direction = Vector2.up * _controlArgs.Direction.Vertical * ControlArgs.Strength;
         }
 
         public override bool CanExit()
@@ -46,7 +60,7 @@ namespace JumpMaster.Movement
 
         public override Vector3 GetCurrentVelocity()
         {
-            return Vector2.up * ControlArgs.Direction.Vertical * ControlData.Force;
+            return _direction * ControlData.Force;
         }
 
         public override void Pause() { }
@@ -67,7 +81,7 @@ namespace JumpMaster.Movement
 
             if (OnTransitionable != null)
             {
-                MovementControlArgs start_args = new(Controller.ControlledRigidbody, ControlArgs.Direction, 1f);
+                FallControlArgs start_args = new(new(Controller));
                 OnTransitionable(Controller.GetControlByState(TransitionState), start_args);
             }
         }
@@ -80,7 +94,8 @@ namespace JumpMaster.Movement
             }
         }
 
-        // Start downwards float when charging a jump.
+        // ##### PRE JUMP CHARGE INPUT ##### \\
+
         private void StartJumpCharge(Vector2 position, float min_hold_duration)
         {
             if (!LevelController.Started)
@@ -90,15 +105,12 @@ namespace JumpMaster.Movement
                 return;
 
             if (OnInputDetected != null)
-                OnInputDetected(this, new(Controller.ControlledRigidbody, MovementDirection.Down));
+                OnInputDetected(this, new FloatControlArgs(new(Controller), MovementDirection.Down));
             ChargingJump = true;
         }
 
         private void CancelJumpCharge()
         {
-            if (!LevelController.Started)
-                return;
-
             ChargingJump = false;
         }
     }

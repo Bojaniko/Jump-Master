@@ -2,8 +2,9 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public abstract class MovementControl<Data> : IMovementControl
-                where Data : MovementControlDataSO
+    public abstract class MovementControl<Data, Args> : IMovementControl
+        where Data : MovementControlDataSO
+        where Args : MovementControlArgs
     {
         public MovementControl(MovementController controller, Data data)
         {
@@ -13,7 +14,6 @@ namespace JumpMaster.Movement
             ControlData = data;
 
             MovementController.Instance.OnMovementUpdate += OnMovementUpdate;
-            ControlArgs = new(Controller.ControlledRigidbody, MovementDirection.Zero, 1f);
         }
 
 
@@ -23,7 +23,9 @@ namespace JumpMaster.Movement
         private bool _started;
         public bool Started { get { return _started; } }
 
-        public MovementControlArgs ControlArgs { get; private set; }
+        protected Args _controlArgs;
+        public MovementControlArgs ControlArgs => _controlArgs;
+
         public readonly Data ControlData;
 
         private readonly MovementController _controller;
@@ -31,29 +33,34 @@ namespace JumpMaster.Movement
 
         protected abstract void OnMovementUpdate();
         public abstract MovementState ActiveState { get; }
-        public abstract bool CanExit();
+        
+        public abstract void Resume();
+        public abstract void Pause();
 
         public bool CanStart()
         {
             return CanStartControl();
         }
         protected abstract bool CanStartControl();
-        
-        public abstract void Resume();
-        public abstract void Pause();
-
         public void Start(MovementControlArgs args)
         {
             if (_started)
                 return;
-            ControlArgs = args;
+
+            if (!args.GetType().Equals(typeof(Args)))
+                throw new InvalidControlArgumentsTypeException();
+            _controlArgs = (Args)args;
+
+            Controller.ControlledRigidbody.drag = 0f;
+
             StartControl();
             _started = true;
-            if (OnStart != null)
-                OnStart();
+
+            OnStart?.Invoke();
         }
         protected abstract void StartControl();
 
+        public abstract bool CanExit();
         public void Exit()
         {
             if (!_started)
@@ -66,10 +73,5 @@ namespace JumpMaster.Movement
         protected abstract void ExitControl();
 
         public abstract Vector3 GetCurrentVelocity();
-
-        protected void UpdateDirection(MovementDirection direction)
-        {
-            ControlArgs = MovementControlArgs.UpdateDirection(ControlArgs, direction);
-        }
     }
 }

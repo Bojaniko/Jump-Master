@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Wave 1
   m_EditorClassIdentifier: 
   TypeOfWave: 0
-  ControllersData: {fileID: 11400000, guid: 389ed9481fde1c14dbbbcd25632ec649, type: 2}
+  ControllersData: {fileID: 11400000, guid: 097d03c6699f9144a93404132fd5a38e, type: 2}

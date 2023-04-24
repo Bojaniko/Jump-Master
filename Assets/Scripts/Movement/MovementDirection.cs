@@ -12,6 +12,19 @@ namespace JumpMaster.Movement
             Horizontal = Mathf.Clamp(horizontal, -1, 1);
         }
 
+        public override bool Equals(object obj)
+        {
+            if (!obj.GetType().Equals(this.GetType()))
+                return false;
+            MovementDirection direction_compare = (MovementDirection)obj;
+            return (Vertical == direction_compare.Vertical && Horizontal == direction_compare.Horizontal);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public static MovementDirection Zero { get { return new(0, 0); } }
         public static MovementDirection Up { get { return new(1, 0); } }
         public static MovementDirection Down { get { return new(-1, 0); } }

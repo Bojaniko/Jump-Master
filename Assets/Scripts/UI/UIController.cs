@@ -47,10 +47,10 @@ namespace JumpMaster.UI
             LevelController.OnLoad += () => { ActivateRegisteredMenus(UILevelStatus.PLAYING); };
         }
 
-        private void ActivateRegisteredButtons(UIMenu menu)
+        private void BindMenuButtons(UIMenu menu)
         {
             foreach (UIButton button in menu.GetComponents<UIButton>())
-                button.RegisterClickEvent();
+                button.BindClickEvent();
         }
 
         private void ActivateRegisteredMenus(UILevelStatus status)
@@ -61,7 +61,7 @@ namespace JumpMaster.UI
                 if (menu.ActiveStatus.Contains(status))
                 {
                     menu.gameObject.SetActive(true);
-                    ActivateRegisteredButtons(menu);
+                    BindMenuButtons(menu);
                 }
             }
         }
