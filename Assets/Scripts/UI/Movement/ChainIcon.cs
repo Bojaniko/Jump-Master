@@ -32,7 +32,7 @@ namespace JumpMaster.UI
 
             c_jumpControl.OnStart -= StartIcons;
 
-            c_dashControl.OnStart += UpdateDash;
+            c_dashControl.OnStart += UpdateChainPosition;
             c_dashControl.OnChain += UpdateDashChain;
             c_jumpControl.OnChain += UpdateJumpChain;
 
@@ -42,7 +42,7 @@ namespace JumpMaster.UI
 
         private void EndLevel()
         {
-            c_dashControl.OnStart += UpdateDash;
+            c_dashControl.OnStart += UpdateChainPosition;
             c_dashControl.OnChain -= UpdateDashChain;
             c_jumpControl.OnChain -= UpdateJumpChain;
 
@@ -91,7 +91,7 @@ namespace JumpMaster.UI
             c_dashImage.fillAmount = 1f - ((float)chain / max_chain);
         }
 
-        private void UpdateDash()
+        private void UpdateChainPosition()
         {
             DashControlArgs dashArgs = (DashControlArgs)c_dashControl.ControlArgs;
 

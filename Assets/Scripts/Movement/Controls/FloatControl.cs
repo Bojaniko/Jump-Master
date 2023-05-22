@@ -44,12 +44,12 @@ namespace JumpMaster.Movement
         }
         protected override void StartControl()
         {
-            Controller.ControlledRigidbody.useGravity = false;
+            Controller.ControlledRigidbody.gravityScale = 0f;
 
             _direction = Vector2.up * _controlArgs.Direction.Vertical * ControlArgs.Strength;
         }
 
-        public override bool CanExit()
+        public override bool CanExit(IMovementControl exit_control)
         {
             return true;
         }
@@ -58,7 +58,7 @@ namespace JumpMaster.Movement
             _pauseTime = 0f;
         }
 
-        public override Vector3 GetCurrentVelocity()
+        public override Vector2 GetCurrentVelocity()
         {
             return _direction * ControlData.Force;
         }
@@ -76,22 +76,19 @@ namespace JumpMaster.Movement
             if (ChargingJump)
                 return;
 
+            TryTransition();
+        }
+
+        // ##### TRANSITION ##### \\
+
+        public MovementState TransitionState => MovementState.FALLING;
+
+        private void TryTransition()
+        {
             if (Time.time - ControlArgs.StartTime + _pauseTime < ControlData.Duration)
                 return;
 
-            if (OnTransitionable != null)
-            {
-                FallControlArgs start_args = new(new(Controller));
-                OnTransitionable(Controller.GetControlByState(TransitionState), start_args);
-            }
-        }
-
-        public MovementState TransitionState
-        {
-            get
-            {
-                return MovementState.FALLING;
-            }
+            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
         }
 
         // ##### PRE JUMP CHARGE INPUT ##### \\

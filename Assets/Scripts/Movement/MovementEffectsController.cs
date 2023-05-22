@@ -36,13 +36,13 @@ namespace JumpMaster.Movement
         private void SpawnJumpCloud()
         {
             Vector3 position = MovementController.Instance.transform.position;
-            position.y = MovementController.Instance.transform.GetComponent<BoxCollider>().bounds.min.y;
+            position.y = MovementController.Instance.Bounds.bounds.min.y;
             Instantiate(JumpCloudPrefab, position, Quaternion.identity);
         }
 
         private void SpawnDashCloud()
         {
-            Vector3 position = new Vector3(MovementController.Instance.GetComponent<BoxCollider>().bounds.min.x, MovementController.Instance.transform.position.y, MovementController.Instance.transform.position.z);
+            Vector3 position = new Vector3(MovementController.Instance.Bounds.bounds.min.x, MovementController.Instance.transform.position.y, MovementController.Instance.transform.position.z);
             //Quaternion dash_direction = Quaternion.LookRotation(Vector3.right * ControlArgs.Direction.Horizontal, Vector3.up);
             Instantiate(DashCloudPrefab, position, Quaternion.identity);
         }

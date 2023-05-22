@@ -4,7 +4,7 @@ using JumpMaster.LevelControllers;
 
 namespace JumpMaster.Movement
 {
-    public sealed class HangControl : MovementControl<HangControlDataSO, HangControlArgs>, IExplicitControl, IDirectional
+    public sealed class HangControl : MovementControl<HangControlDataSO, HangControlArgs>, IPrimaryControl, IExplicitControl, IDirectional
     {
         private readonly float _hangFromScreenWidth;
 
@@ -27,7 +27,7 @@ namespace JumpMaster.Movement
 
         public override MovementState ActiveState { get { return MovementState.HANGING; } }
 
-        public override bool CanExit()
+        public override bool CanExit(IMovementControl exit_control)
         {
             if (Time.time - ControlArgs.StartTime < ControlData.MinDuration)
                 return false;
@@ -43,8 +43,8 @@ namespace JumpMaster.Movement
         }
         protected override void StartControl()
         {
-            Controller.ControlledRigidbody.useGravity = false;
-            Controller.ControlledRigidbody.velocity = Vector3.zero;
+            Controller.ControlledRigidbody.gravityScale = 0f;
+            Controller.ControlledRigidbody.velocity = Vector2.zero;
 
             Vector3 hang_position = Vector3.zero;
             if (_controlArgs.Direction.Horizontal == 1)
@@ -58,9 +58,9 @@ namespace JumpMaster.Movement
             SwitchDirection();
         }
 
-        public override Vector3 GetCurrentVelocity()
+        public override Vector2 GetCurrentVelocity()
         {
-            return Vector3.zero;
+            return Vector2.zero;
         }
 
         public override void Pause() { }

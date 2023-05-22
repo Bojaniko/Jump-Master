@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using JumpMaster.Movement;
+using JumpMaster.Damage;
 
 namespace JumpMaster.LevelControllers
 {
@@ -36,10 +37,16 @@ namespace JumpMaster.LevelControllers
 
             transform.localScale = Vector3.one * Size;
 
-            Health = MaxHealth;
+            DamageController.Instance.RegisterListener<ExplosionDamageSource>(gameObject, InputDamage);
+            DamageController.Instance.RegisterListener<StunAreaDamageSource>(gameObject, InputDamage);
 
-            LevelController.OnLoad += EnableDamage;
-            LevelController.OnEndLevel += DisableDamage;
+            Restart();
+            LevelController.OnRestart += Restart;
+        }
+
+        private void Restart()
+        {
+            Health = MaxHealth;
         }
 
         private void Update()
@@ -59,39 +66,21 @@ namespace JumpMaster.LevelControllers
 
             if (c_movement.BoundsScreenPosition.min.y <= 0f)
             {
-                DamageInfo damage_info = new(transform.position, Vector2.up, 1f, 20f, DamageType.TRAP);
-                DamageController.LogDamage(damage_info);
+                //DamageInfo damage_info = new(transform.position, Vector2.up, 1f, 20f, DamageType.TRAP);
+                //DamageController.LogDamage(damage_info);
             }
         }
 
         // ##### DAMAGE ##### \\
 
-        private void EnableDamage() { DamageController.OnDamageLogged += InputDamage; }
-        private void DisableDamage() { DamageController.OnDamageLogged -= InputDamage; }
-
-        private void InputDamage(DamageInfo info)
+        private void InputDamage(IDamageRecord record)
         {
-            float distance_percentage = Vector2.Distance(info.Position, transform.position) / info.Radius;
-            if (distance_percentage > 1f)
-                return;
-
-            float damage = 1f - Mathf.Clamp(distance_percentage, 0f, 1f);
-            damage *= info.Amount;
-
-            Damage(damage);
-
-            DamageInfo output_info = new(info.Position, Vector2.up, info.Radius, damage, info.TypeOfDamage);
-            DamageController.LogPlayerDamage(output_info);
-        }
-
-        private void Damage(float amount)
-        {
-            Health -= amount;
+            Health -= record.DamageOutput;
             if (Health < 1f)
                 Health = 0f;
 
             Debug.Log($"Player health is {Health}.");
-            
+
             if (Health == 0f)
             {
                 LevelController.EndLevel();

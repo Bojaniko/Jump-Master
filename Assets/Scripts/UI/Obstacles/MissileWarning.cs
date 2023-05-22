@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+using JumpMaster.LevelControllers;
 using JumpMaster.Structure;
 using JumpMaster.Obstacles;
 using JumpMaster.UI.Data;
@@ -95,8 +96,6 @@ namespace JumpMaster.UI
             if (!Playing)
                 return;
 
-            OnWarningEnded = null;
-
             if (_flashCoroutine != null)
             {
                 StopCoroutine(_flashCoroutine);
@@ -149,7 +148,7 @@ namespace JumpMaster.UI
 
             if (_flashes == _data.FlashIntervals)
             {
-                OnWarningEnded?.Invoke();
+                if (LevelController.Started) OnWarningEnded?.Invoke();
                 Stop();
             }
             else

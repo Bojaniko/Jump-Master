@@ -5,7 +5,7 @@ using JumpMaster.Controls;
 
 namespace JumpMaster.Movement
 {
-    public class ChargedJumpControl : MovementControl<ChargedJumpControlDataSO, ChargedJumpControlArgs>, ITransitionable, IInputableControl, IDirectional
+    public class ChargedJumpControl : MovementControl<ChargedJumpControlDataSO, ChargedJumpControlArgs>, IPrimaryControl,  ITransitionable, IInputableControl, IDirectional
     {
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
@@ -33,7 +33,7 @@ namespace JumpMaster.Movement
         }
         public override MovementState ActiveState { get { return MovementState.JUMP_CHARGING; } }
 
-        public override bool CanExit()
+        public override bool CanExit(IMovementControl exit_control)
         {
             if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMPING))
             {
@@ -61,13 +61,13 @@ namespace JumpMaster.Movement
         }
         protected override void StartControl()
         {
-            Controller.ControlledRigidbody.useGravity = false;
+            Controller.ControlledRigidbody.gravityScale = 0f;
         }
 
-        public override Vector3 GetCurrentVelocity()
+        public override Vector2 GetCurrentVelocity()
         {
             float heightPercentage = (Controller.transform.position.y - ControlArgs.StartPosition.y) / (ControlData.ChargedHeight * ControlArgs.Strength);
-            return Vector3.Lerp(Vector3.up * (ControlData.ChargedForce * ControlArgs.Strength), Vector3.zero, heightPercentage);
+            return Vector2.Lerp(Vector2.up * (ControlData.ChargedForce * ControlArgs.Strength), Vector2.zero, heightPercentage);
         }
 
         public MovementState TransitionState
@@ -88,8 +88,7 @@ namespace JumpMaster.Movement
             if (Controller.ControlledRigidbody.velocity.y > ControlData.EndForce)
                 return;
 
-            FallControlArgs start_args = new(new(Controller));
-            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), start_args);
+            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
         }
 
         // ##### CHARGED JUMP INPUTED ##### \\

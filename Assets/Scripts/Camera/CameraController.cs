@@ -32,27 +32,22 @@ namespace JumpMaster.CameraControls
 
             Restart();
 
+            CalculateMargins(Data.MarginScreen);
+
             LevelController.OnRestart += Restart;
         }
 
         private void Restart()
         {
-            c_mainCamera.transform.position = new Vector3(0, 0, ZPosition);
+            c_mainCamera.transform.position = new Vector3(0, 0, Data.ZPosition);
 
             _currentHeight = 0f;
             _startHeight = 0f;
-            _speed = AscendingSpeed;
+            _speed = Data.AscendingSpeed;
         }
 
-        public float ZPosition = -15f;
-        [Range(0.1f, 10f)]
-        public float AscendingSpeed = 0.6f;
-        [Range(50, 500)]
-        public int MaxScreenWidthPosition = 100;
-        [Range(50, 500)]
-        public int MaxScreenHeightPosition = 100;
-        [Range(1f, 10f)]
-        public float ReachEdgeSpeed = 2f;
+        public CameraDataSO Data => _data;
+        [SerializeField] private CameraDataSO _data;
 
         private float _speed;
         private float _startHeight;
@@ -85,29 +80,57 @@ namespace JumpMaster.CameraControls
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.JUMP_CHARGING) ||
                 MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.BOUNCING))
             {
-                if (MovementController.Instance.BoundsScreenPosition.max.y < Screen.height - MaxScreenHeightPosition)
-                    goto FloatCheck;
-
-                float playerHeightDifference = MovementController.Instance.Bounds.bounds.max.y -
-                    c_mainCamera.ScreenToWorldPoint(new Vector3(0, Screen.height - MaxScreenHeightPosition,
-                    Vector3.Distance(c_mainCamera.transform.position, MovementController.Instance.transform.position))).y;
-
-                height_step = playerHeightDifference * ReachEdgeSpeed * Time.deltaTime;
+                height_step = GetPlayerHeightDifference() * Data.ReachEdgeSpeed * Time.deltaTime;
             }
 
-            FloatCheck:
+            //if (MovementController.Instance.BoundsScreenPosition.max.y < Screen.height - Data.MaxScreenHeightPosition)
             if (MovementController.Instance.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
                 height_step = 0;
 
             current_height += height_step;
         }
 
-        private Vector3 GetCurrentHeightPosition(float start_height, float current_height)
+        private Vector3 GetCurrentHeightPosition(in float start_height, in float current_height)
         {
             Vector3 camera_position = c_mainCamera.transform.position;
             camera_position.y = start_height + current_height;
 
             return camera_position;
+        }
+
+        private float GetPlayerHeightDifference()
+        {
+            return MovementController.Instance.Bounds.bounds.max.y -
+                    c_mainCamera.ScreenToWorldPoint(new Vector3(0, Screen.height - Data.MaxScreenHeightPosition,
+                    Vector3.Distance(c_mainCamera.transform.position, MovementController.Instance.transform.position))).y;
+        }
+
+        // ##### MARGIN ##### \\
+
+        public static float TopMargin => _topMargin;
+        private static float _topMargin;
+
+        public static float BottomMargin => _bottomMargin;
+        private static float _bottomMargin;
+
+        public static float LeftMargin => _leftMargin;
+        private static float _leftMargin;
+
+        public static float RightMargin => _rightMargin;
+        private static float _rightMargin;
+
+        public static bool IsPositionInTopMargin(Vector2 screen_position) => screen_position.y >= TopMargin;
+        public static bool IsPositionInBottomMargin(Vector2 screen_position) => screen_position.y <= BottomMargin;
+        public static bool IsPositionInLeftMargin(Vector2 screen_position) => screen_position.x <= LeftMargin;
+        public static bool IsPositionInRightMargin(Vector2 screen_position) => screen_position.x >= RightMargin;
+
+        private static void CalculateMargins(in Vector2 margin)
+        {
+            _topMargin = Screen.height - margin.y;
+            _bottomMargin = margin.y;
+
+            _leftMargin = margin.x;
+            _rightMargin = Screen.width - margin.x;
         }
 
         // ##### CACHE ##### \\

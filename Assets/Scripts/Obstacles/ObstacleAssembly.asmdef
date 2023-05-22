@@ -1,6 +1,6 @@
 {
     "name": "ObstacleAssembly",
-    "rootNamespace": "",
+    "rootNamespace": "JumpMaster.Obstacles",
     "references": [
         "GUID:fb96ca16922018046a9afe18cd20441a",
         "GUID:859fd48c4cd296c4f9d49929b387c0e9",
@@ -9,8 +9,9 @@
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:4099e5319e98558428028d54bc62664e",
         "GUID:996382cd14154894c8a452523295de56",
-        "GUID:27281bcc26fc9a049a40e4e270f1b79f",
-        "GUID:5f2c2090418cec6408840530e172e004"
+        "GUID:5f2c2090418cec6408840530e172e004",
+        "GUID:91bb4a0094495fb48a49ef8936082a4f",
+        "GUID:24e8c0082345c3c45b82e7e9694079ff"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fc73eb645b53ae45b3d0ee17212e846, type: 3}
   m_Name: OC FBM1
   m_EditorClassIdentifier: 
-  SelectedObstacle: 2
-  SelectedObstacles: 0000000002000000
-  FallingBomb: {fileID: 11400000, guid: fa68de5124c78734f940d22204017708, type: 2}
-  LaserGate: {fileID: 0}
-  Missile: {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}
+  PopupSelection: 0
+  SelectedSpawnMetrics: {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}
+  SpawnMetricsData:
+  - {fileID: 11400000, guid: fa68de5124c78734f940d22204017708, type: 2}
+  - {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}

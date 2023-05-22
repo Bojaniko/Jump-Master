@@ -8,6 +8,7 @@ namespace JumpMaster.Movement
 {
     public enum MovementState { STILL, JUMPING, JUMP_CHARGING, DASHING, HANGING, FLOATING, FALLING, BOUNCING };
 
+    [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
     public class MovementController : LevelControllerInitializable
     {
         public MovementControllerDataSO MovementControllerData;
@@ -70,8 +71,6 @@ namespace JumpMaster.Movement
         {
             Constrain(false);
 
-            TryUnregisterControls();
-
             RegisterControls();
             ResetPlayerPosition();
             BoundsScreenPosition = GetBoundsScreenPosition();
@@ -111,6 +110,7 @@ namespace JumpMaster.Movement
 
         // ##### CONTROL STARTER ##### \\
 
+        public IMovementControl PreviousPrimaryControl { get; private set; }
         public IMovementControl PreviousControl { get; private set; }
         public IMovementControl ActiveControl { get; private set; }
 
@@ -122,7 +122,7 @@ namespace JumpMaster.Movement
             if (LevelController.Ended)
                 return;
 
-            if (!ActiveControl.CanExit())
+            if (!ActiveControl.CanExit(control))
                 return;
 
             if (!control.CanStart())
@@ -130,19 +130,37 @@ namespace JumpMaster.Movement
 
             StartControl(control, start_args);
         }
+
+        private void ForceStartControl(IMovementControl control, MovementControlArgs start_args)
+        {
+            if (LevelController.Paused)
+                return;
+
+            if (LevelController.Ended)
+                return;
+
+            StartControl(control, start_args);
+        }
+
         private void StartControl(IMovementControl control, MovementControlArgs start_args)
         {
             if (ActiveControl != null)
                 ActiveControl.Exit();
+
             if (PreviousControl == null)
                 PreviousControl = control;
             else
                 PreviousControl = ActiveControl;
-            //Debug.Log($"Changed control is {control}.");
+
+            if (ActiveControl is IPrimaryControl)
+                PreviousPrimaryControl = ActiveControl;
+
             ActiveControl = control;
             ActiveControl.Start(start_args);
 
             OnActiveControlChange?.Invoke(control);
+
+            //Debug.Log($"Changed control is {control}.");
         }
 
         // ##### CONTROL GETTERS ##### \\
@@ -199,31 +217,12 @@ namespace JumpMaster.Movement
             foreach (IMovementControl control in _controls)
             {
                 if (control is IExplicitControl explicit_control)
-                    explicit_control.OnExplicitDetection += StartControl;
+                    explicit_control.OnExplicitDetection += ForceStartControl;
                 if (control is ITransitionable transitionable)
-                    transitionable.OnTransitionable += StartControl;
+                    transitionable.OnTransitionable += ForceStartControl;
                 if (control is IInputableControl inputable)
                     inputable.OnInputDetected += TryStartControl;
             }
-        }
-
-        private void TryUnregisterControls()
-        {
-            if (_controls == null || _controls.Count == 0)
-                return;
-
-            foreach (IMovementControl control in _controls)
-            {
-                if (control is IExplicitControl explicit_control)
-                    explicit_control.OnExplicitDetection -= StartControl;
-                if (control is ITransitionable transitionable)
-                    transitionable.OnTransitionable -= StartControl;
-                if (control is IInputableControl inputable)
-                    inputable.OnInputDetected -= TryStartControl;
-            }
-
-            OnActiveControlChange = null;
-            _controls.Clear();
         }
 
         // ##### POSITION ##### \\
@@ -256,9 +255,9 @@ namespace JumpMaster.Movement
         private void Constrain(bool constrain)
         {
             if (constrain)
-                c_rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                c_rigidbody.constraints = RigidbodyConstraints2D.FreezeAll;
             else
-                c_rigidbody.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+                c_rigidbody.constraints = RigidbodyConstraints2D.FreezeRotation;
         }
 
         // ##### PAUSE ##### \\
@@ -281,18 +280,19 @@ namespace JumpMaster.Movement
 
         // ##### CACHE ##### \\
 
-        public BoxCollider Bounds => c_bounds;
-        public Rigidbody ControlledRigidbody => c_rigidbody;
-
         private Camera c_camera;
-        private BoxCollider c_bounds;
-        private Rigidbody c_rigidbody;
+
+        public BoxCollider2D Bounds => c_bounds;
+        private BoxCollider2D c_bounds;
+
+        public Rigidbody2D ControlledRigidbody => c_rigidbody;
+        private Rigidbody2D c_rigidbody;
 
         private void Cache()
         {
             c_camera = Camera.main;
-            c_bounds = GetComponent<BoxCollider>();
-            c_rigidbody = GetComponent<Rigidbody>();
+            c_bounds = GetComponent<BoxCollider2D>();
+            c_rigidbody = GetComponent<Rigidbody2D>();
         }
     }
 }

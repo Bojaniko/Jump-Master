@@ -21,7 +21,7 @@ namespace JumpMaster.Movement
         public event ControlActivityEventHandler OnExit;
 
         private bool _started;
-        public bool Started { get { return _started; } }
+        public bool Started => _started;
 
         protected Args _controlArgs;
         public MovementControlArgs ControlArgs => _controlArgs;
@@ -29,7 +29,7 @@ namespace JumpMaster.Movement
         public readonly Data ControlData;
 
         private readonly MovementController _controller;
-        public MovementController Controller { get { return _controller; } }
+        public MovementController Controller => _controller;
 
         protected abstract void OnMovementUpdate();
         public abstract MovementState ActiveState { get; }
@@ -51,8 +51,6 @@ namespace JumpMaster.Movement
                 throw new InvalidControlArgumentsTypeException();
             _controlArgs = (Args)args;
 
-            Controller.ControlledRigidbody.drag = 0f;
-
             StartControl();
             _started = true;
 
@@ -60,7 +58,7 @@ namespace JumpMaster.Movement
         }
         protected abstract void StartControl();
 
-        public abstract bool CanExit();
+        public abstract bool CanExit(IMovementControl exit_control);
         public void Exit()
         {
             if (!_started)
@@ -72,6 +70,6 @@ namespace JumpMaster.Movement
         }
         protected abstract void ExitControl();
 
-        public abstract Vector3 GetCurrentVelocity();
+        public abstract Vector2 GetCurrentVelocity();
     }
 }

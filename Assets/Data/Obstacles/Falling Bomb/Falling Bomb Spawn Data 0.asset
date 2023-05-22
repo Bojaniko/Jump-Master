@@ -16,5 +16,4 @@ MonoBehaviour:
   DetectionRadius: 5
   DetectionShowDistance: 6
   ArmingDurationMS: 800
-  Damage: 30
-  DamageRadius: 5
+  ExplosionData: {fileID: 11400000, guid: c96c4e3da0465cc43865ecda6fe496c2, type: 2}

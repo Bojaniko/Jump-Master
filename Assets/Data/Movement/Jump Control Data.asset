@@ -12,11 +12,60 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf9e0f56020dde4a9fe610c747a42e1, type: 3}
   m_Name: Jump Control Data
   m_EditorClassIdentifier: 
-  Height: 6
+  Height: 5
   Force: 20
-  EndForce: 0.5
+  VelocityFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.15
+      value: 1
+      inSlope: Infinity
+      outSlope: -2
+      tangentMode: 65
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.25
+      value: 0.8
+      inSlope: -2.8403463
+      outSlope: Infinity
+      tangentMode: 97
+      weightedMode: 0
+      inWeight: 0.5941177
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.8
+      inSlope: Infinity
+      outSlope: -0.5673545
+      tangentMode: 7
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.24235296
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -0.34012952
+      outSlope: -0.34012952
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.77176476
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   MaxChain: 10
-  ChainPenaltyDuration: 2.5
   MinChainHeight: 0.75
-  MaxCrossChainDistance: 0.9
-  CrossChainVelocityPercentage: 0.5
+  ChainPenaltyDuration: 2.5
+  CrossChainHorizontalForce: 10

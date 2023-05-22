@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0195d79e3f5ebd42a0a7534b6992726, type: 3}
   m_Name: SM M 1
   m_EditorClassIdentifier: 
+  _spawnWeight: 8
   _spawnAmount: 20
   _maxActiveObstacles: 6
   Data: {fileID: 11400000, guid: 9627c21dc6584264a86bc6a3e11c2f72, type: 2}

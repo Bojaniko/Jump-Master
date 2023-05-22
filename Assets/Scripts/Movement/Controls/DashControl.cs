@@ -5,10 +5,15 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public sealed class DashControl : MovementControl<DashControlDataSO, DashControlArgs>, ITransitionable, IInputableControl, IDirectional
+    public sealed class DashControl : MovementControl<DashControlDataSO, DashControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IDirectional, IChainable
     {
+        private readonly float _pixelWorld;
+
         private float _chainPenaltyTime;
-        private Vector3 _vectorDirection;
+        private float _distancePercentage;
+        private float _targetDistance;
+
+        private Vector2 _topVelocity;
 
         public MovementDirection Direction
         {
@@ -20,9 +25,6 @@ namespace JumpMaster.Movement
             }
         }
 
-        public float DistancePercentage { get; private set; }
-        public int Chain { get; private set; }
-
         public event ChainEventHandler OnChain;
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
@@ -32,9 +34,13 @@ namespace JumpMaster.Movement
             if (SwipeDetector.Instance != null)
                 SwipeDetector.Instance.OnSwipeDetected += DashInput;
 
-            _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero);
+            _pixelWorld = Vector2.Distance(Camera.main.ScreenToWorldPoint(Vector3.zero), Camera.main.ScreenToWorldPoint(Vector3.right * 100));
 
-            DistancePercentage = 0f;
+            _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero, 1f);
+
+            _distancePercentage = 0f;
+
+            LevelController.OnRestart += Restart;
         }
         public override MovementState ActiveState { get { return MovementState.DASHING; } }
 
@@ -45,25 +51,12 @@ namespace JumpMaster.Movement
             if (!Started)
                 return;
 
-            DistancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / ControlData.Distance;
+            _distancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / _targetDistance;//ControlData.Distance;
 
-            if (DistancePercentage < ControlData.TransitionDistancePercentage)
-                return;
-
-            if (OnTransitionable != null)
-            {
-                FallControlArgs start_args = new(new(Controller));
-                OnTransitionable(Controller.GetControlByState(TransitionState), new FallControlArgs(start_args));
-            }
+            TryTransition();
         }
 
-        public override Vector3 GetCurrentVelocity()
-        {
-            if (DistancePercentage < ControlData.MinChainDistance)
-                return Vector3.Lerp(_vectorDirection * ControlData.Force, Vector3.zero, DistancePercentage);
-            else
-                return Vector3.Lerp(_vectorDirection * ControlData.Force, Physics.gravity, DistancePercentage);
-        }
+        // ##### CONTROL INSTRUCTIONS ##### \\
 
         protected override bool CanStartControl()
         {
@@ -77,34 +70,26 @@ namespace JumpMaster.Movement
         }
         protected override void StartControl()
         {
-            Controller.ControlledRigidbody.useGravity = false;
+            Controller.ControlledRigidbody.gravityScale = 0f;
 
-            _vectorDirection = GetVectorDirection(Controller.PreviousControl.ActiveState);
+            _distancePercentage = 0f;
+
+            _targetDistance = Mathf.Clamp(_controlArgs.TargetDistance, ControlData.MinDistance, ControlData.MaxDistance);
+
+            _topVelocity = GetTopVelocity(Controller.PreviousControl.ActiveState, _controlArgs.Direction.Horizontal);
 
             PerformChain();
         }
 
-        public override bool CanExit()
+        public override bool CanExit(IMovementControl exit_control)
         {
-            if (!Started)
+            if (exit_control.ActiveState.Equals(MovementState.DASHING) && _distancePercentage < ControlData.MinChainDistance)
                 return false;
-
-            if (DistancePercentage < ControlData.MinChainDistance)
-                return false;
-
             return true;
         }
         protected override void ExitControl()
         {
-            DistancePercentage = 0f;
-        }
-
-        public MovementState TransitionState
-        {
-            get
-            {
-                return MovementState.FALLING;
-            }
+            _distancePercentage = 0f;
         }
 
         public override void Pause() { }
@@ -113,7 +98,42 @@ namespace JumpMaster.Movement
             _chainPenaltyTime += LevelController.LastPauseDuration;
         }
 
+        private void Restart()
+        {
+            Chain = 0;
+            _chainPenaltyTime = 0f;
+            _distancePercentage = 0f;
+        }
+
+        // ##### PHYSICS ##### \\
+
+        public override Vector2 GetCurrentVelocity()
+        {
+            float horizontalVelocity = Mathf.Lerp(_topVelocity.x, 0, 1f - ControlData.HorizontalVelocityFalloff.Evaluate(_distancePercentage));
+            float verticalVelocity = 0;
+
+            if (Controller.ControlledRigidbody.transform.position.y - _controlArgs.StartPosition.y < ControlData.MaxCrossChainVerticalDistance)
+                verticalVelocity = Mathf.Lerp(_topVelocity.y, Physics2D.gravity.y, ControlData.GravityFalloff.Evaluate(_distancePercentage));
+
+            return new(horizontalVelocity, verticalVelocity);
+        }
+
+        private Vector2 GetTopVelocity(MovementState transition_state, int horizontal_direction)
+        {
+            Vector2 velocity = Vector2.right * horizontal_direction * ControlData.Force;
+
+            if (transition_state.Equals(MovementState.JUMPING)
+                || transition_state.Equals(MovementState.FLOATING)
+                || transition_state.Equals(MovementState.HANGING))
+            {
+                velocity += Vector2.up * ControlData.CrossChainVerticalForce;
+            }
+            return velocity;
+        }
+
         // ##### CHAIN ##### \\
+
+        public int Chain { get; private set; }
 
         private void PerformChain()
         {
@@ -135,7 +155,19 @@ namespace JumpMaster.Movement
             OnChain?.Invoke(Chain, ControlData.MaxChain);
         }
 
-        // Detect swipe input for dashing.
+        // ##### TRANSITION ##### \\
+
+        public MovementState TransitionState => MovementState.FALLING;
+        private void TryTransition()
+        {
+            if (_distancePercentage < ControlData.TransitionDistancePercentage)
+                return;
+
+            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
+        }
+
+        // ##### INPUT ##### \\
+
         private void DashInput(Swipe swipe)
         {
             int dir = 0;
@@ -152,22 +184,9 @@ namespace JumpMaster.Movement
                     return;
             }
 
-            MovementDirection direction_move = new(0, dir);
-            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), direction_move));
-        }
-
-        // Get the direction the player should move at.
-        private Vector3 GetVectorDirection(MovementState transition_state)
-        {
-            Vector3 vector_direction = Vector3.right * _controlArgs.Direction.Horizontal;
-
-            if (transition_state.Equals(MovementState.JUMPING)
-                || transition_state.Equals(MovementState.FLOATING)
-                || transition_state.Equals(MovementState.HANGING))
-            {
-                vector_direction += Vector3.up * ControlData.CrossChainVelocity;
-            }
-            return vector_direction;
+            float targetDistance = (swipe.DistanceScreen * _pixelWorld) / 100f;
+            MovementDirection directionMove = new(0, dir);
+            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove, targetDistance));
         }
     }
 }

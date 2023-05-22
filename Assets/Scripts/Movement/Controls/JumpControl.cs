@@ -5,22 +5,18 @@ using UnityEngine;
 
 namespace JumpMaster.Movement
 {
-    public sealed class JumpControl : MovementControl<JumpControlDataSO, MovementControlArgs>, ITransitionable, IInputableControl, IChainable
+    public sealed class JumpControl : MovementControl<JumpControlDataSO, MovementControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IChainable
     {
-        private Vector2 _maxVelocity;
         private float _chainPenaltyTime;
+        private float _heightPercentage;
+
+        private Vector2 _topVelocity;
 
         public int Chain { get; private set; }
 
         public event ChainEventHandler OnChain;
         public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
-
-        public override Vector3 GetCurrentVelocity()
-        {
-            float heightPercentage = (Controller.transform.position.y - ControlArgs.StartPosition.y) / ControlData.Height;
-            return Vector2.Lerp(_maxVelocity, Vector2.zero, heightPercentage);
-        }
 
         public JumpControl(MovementController controller, JumpControlDataSO data) : base(controller, data)
         {
@@ -29,43 +25,21 @@ namespace JumpMaster.Movement
 
             Controller.OnActiveControlChange += OnChargedJump;
 
+            LevelController.OnRestart += Restart;
+
             if (InputController.Instance != null)
                 InputController.Instance.OnTap += JumpInput;
         }
-        public override MovementState ActiveState { get { return MovementState.JUMPING; } }
-
-
-        protected override bool CanStartControl()
+        public MovementState TransitionState
         {
-            if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
-                return false;
-
-            if (Chain >= ControlData.MaxChain) return false;
-
-            return true;
-        }
-        protected override void StartControl()
-        {
-            Controller.ControlledRigidbody.useGravity = false;
-
-            _maxVelocity = GetVectorDirection(Controller.PreviousControl) * ControlData.Force;
-
-            PerformChain();
-
-            if (!LevelController.Started)
-                LevelController.StartLevel();
-        }
-
-        public override bool CanExit()
-        {
-            if (Controller.ActiveControl.ActiveState.Equals(MovementState.JUMPING))
+            get
             {
-                if ((Controller.gameObject.transform.position.y - ControlArgs.StartPosition.y) / ControlData.Height < ControlData.MinChainHeight)
-                    return false;
+                if (_topVelocity.x != 0f)
+                    return MovementState.FALLING;
+                return MovementState.FLOATING;
             }
-            return true;
         }
-        protected override void ExitControl() { }
+        public override MovementState ActiveState { get { return MovementState.JUMPING; } }
 
         protected override void OnMovementUpdate()
         {
@@ -74,7 +48,9 @@ namespace JumpMaster.Movement
             if (!Started)
                 return;
 
-            if (Mathf.Abs(Controller.ControlledRigidbody.velocity.y) > ControlData.EndForce)
+            _heightPercentage = (Controller.transform.position.y - ControlArgs.StartPosition.y) / ControlData.Height;
+
+            if (Mathf.Abs(Controller.ControlledRigidbody.velocity.y) > 0.5f)
                 return;
 
             MovementControlArgs start_args = new(Controller);
@@ -82,8 +58,41 @@ namespace JumpMaster.Movement
             if (TransitionState.Equals(MovementState.FLOATING))
                 OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new FloatControlArgs(start_args, MovementDirection.Up));
             else
-                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new FallControlArgs(start_args));
+                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), start_args); // FALLING
         }
+
+        // ##### CONTROL ##### \\
+
+        protected override bool CanStartControl()
+        {
+            if (Chain >= ControlData.MaxChain) return false;
+
+            return true;
+        }
+        protected override void StartControl()
+        {
+            Controller.ControlledRigidbody.gravityScale = 0f;
+
+            _heightPercentage = 0f;
+
+            _topVelocity = GetTopVelocity(Controller.PreviousPrimaryControl);
+
+            PerformChain();
+
+            if (!LevelController.Started)
+                LevelController.StartLevel();
+        }
+
+        public override bool CanExit(IMovementControl exit_control)
+        {
+            if (exit_control.ActiveState.Equals(MovementState.JUMPING))
+            {
+                if ((Controller.gameObject.transform.position.y - ControlArgs.StartPosition.y) / ControlData.Height < ControlData.MinChainHeight)
+                    return false;
+            }
+            return true;
+        }
+        protected override void ExitControl() { }
 
         public override void Resume()
         {
@@ -91,28 +100,32 @@ namespace JumpMaster.Movement
         }
         public override void Pause() { }
 
-        public MovementState TransitionState
+        private void Restart()
         {
-            get
+            Chain = 0;
+            _chainPenaltyTime = 0f;
+            _heightPercentage = 0f;
+        }
+
+        // ##### PHYSICS ##### \\
+
+        public override Vector2 GetCurrentVelocity()
+        {
+            return Vector2.Lerp(_topVelocity, Vector2.zero, 1f - ControlData.VelocityFalloff.Evaluate(_heightPercentage));
+        }
+
+        private Vector2 GetTopVelocity(IMovementControl previous_primary_control)
+        {
+            Vector2 velocity = Vector2.up * ControlData.Force;
+
+            if (previous_primary_control is IPrimaryControl)
             {
-                if (_maxVelocity.x != 0f)
-                    return MovementState.FALLING;
-                return MovementState.FLOATING;
+                var directionalControl = previous_primary_control as IDirectional;
+                if (directionalControl != null)
+                    velocity += Vector2.right * directionalControl.Direction.Horizontal * ControlData.CrossChainHorizontalForce;
             }
-        }
 
-        // ##### INPUT ##### \\
-
-        private void JumpInput()
-        {
-            OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
-        }
-
-        private void OnChargedJump(IMovementControl control)
-        {
-            if (!control.ActiveState.Equals(MovementState.JUMP_CHARGING))
-                return;
-            PerformChain();
+            return velocity;
         }
 
         // ##### CHAIN ##### \\
@@ -137,19 +150,18 @@ namespace JumpMaster.Movement
             OnChain?.Invoke(Chain, ControlData.MaxChain);
         }
 
-        // ##### DETERMINE MOVEMENT DIRECTION ##### \\
+        // ##### INPUT ##### \\
 
-        private Vector2 GetVectorDirection(IMovementControl previous_control)
+        private void JumpInput()
         {
-            Vector2 vector_direction = Vector2.up;
+            OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
+        }
 
-            if (previous_control.ActiveState.Equals(MovementState.DASHING))
-            {
-                DashControlArgs dashArgs = (DashControlArgs)previous_control.ControlArgs;
-                vector_direction += Vector2.right * dashArgs.Direction.Horizontal * ControlData.CrossChainVelocityPercentage;
-            }
-
-            return vector_direction;
+        private void OnChargedJump(IMovementControl control)
+        {
+            if (!control.ActiveState.Equals(MovementState.JUMP_CHARGING))
+                return;
+            PerformChain();
         }
     }
 }

@@ -1,23 +1,22 @@
 using UnityEngine;
 
-using JumpMaster.Movement;
 using JumpMaster.Structure;
+using JumpMaster.CameraControls;
 using JumpMaster.LevelControllers;
 
 namespace JumpMaster.Obstacles
 {
-    [RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(SphereCollider))]
-    public abstract class Obstacle<ObstacleScriptableObject, ObstacleController, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments> : Initializable, IObstacle
+    [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
+    public abstract class Obstacle<ObstacleScriptableObject, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments> : Initializable, IObstacle
         where ObstacleScriptableObject : ObstacleSO
-        where ObstacleController : IObstacleController
         where SpawnScriptableObject : SpawnSO
         where SpawnMetricsScriptableObject : SpawnMetricsSO<ObstacleScriptableObject, SpawnScriptableObject>
         where SpawnArguments : SpawnArgs
     {
         public ObstacleScriptableObject Data { get; private set; }
 
-        private ObstacleController _controller;
-        protected SpawnMetricsScriptableObject SpawnMetrics => (SpawnMetricsScriptableObject)_controller.SpawnMetrics;
+        private SpawnMetricsScriptableObject _spawnMetrics;
+        protected SpawnMetricsScriptableObject SpawnMetrics => _spawnMetrics;
 
         public void Generate(ObstacleSO data, IObstacleController controller)
         {
@@ -28,7 +27,6 @@ namespace JumpMaster.Obstacles
                 return;
 
             Data = (ObstacleScriptableObject)data;
-            _controller = (ObstacleController)controller;
 
             InitializeBase();
             Initialize();
@@ -49,24 +47,27 @@ namespace JumpMaster.Obstacles
             if (!Spawned)
                 return;
 
-            BoundsScreenPosition = GetBoundsScreenPosition();
-
             OnUpdate();
 
             if (IsDespawnable())
                 Despawn();
         }
 
+        private void FixedUpdate()
+        {
+            OnFixedUpdate();
+
+            CalculateMarginPosition();
+        }
+
         private void InitializeBase()
         {
             LevelController.OnRestart += Restart;
 
-            CacheComponents();
+            Cache();
 
             transform.localScale = Vector3.one * Data.Scale;
             transform.position = new Vector3(0, 0, Data.Z_Position);
-
-            AlignPlayerDetection();
         }
 
         private void Restart()
@@ -77,20 +78,23 @@ namespace JumpMaster.Obstacles
         protected abstract void SpawnInstructions();
         protected abstract void DespawnInstructions();
         protected abstract void OnUpdate();
+        protected abstract void OnFixedUpdate();
         protected abstract bool IsDespawnable();
 
         protected abstract override void Initialize();
 
         // ##### EVENTS ##### \\
+
         public event ObstacleStateEventHandler OnSpawn;
         public event ObstacleStateEventHandler OnDespawn;
+        public event ObstacleStateEventHandler OnMarginPositionChange;
 
         // ##### SPAWNING ##### \\
         public bool Spawned { get; private set; }
         public SpawnArguments SpawnArgs { get; private set; }
         public SpawnScriptableObject SpawnData { get; private set; }
 
-        public void Spawn(SpawnSO spawn_data, SpawnArgs spawn_args)
+        public void Spawn(SpawnSO spawn_data, SpawnArgs spawn_args, ISpawnMetricsSO spawn_metrics)
         {
             if (Spawned)
                 return;
@@ -101,12 +105,21 @@ namespace JumpMaster.Obstacles
             if (!spawn_args.GetType().Equals(typeof(SpawnArguments)))
                 return;
 
-            Spawn((SpawnScriptableObject)spawn_data, (SpawnArguments)spawn_args);
+            if (!spawn_metrics.GetType().Equals(typeof(SpawnMetricsScriptableObject)))
+                return;
+
+            Spawn((SpawnScriptableObject)spawn_data, (SpawnArguments)spawn_args, (SpawnMetricsScriptableObject)spawn_metrics);
         }
-        private void Spawn(SpawnScriptableObject spawn_data, SpawnArguments spawn_args)
+        private void Spawn(SpawnScriptableObject spawn_data, SpawnArguments spawn_args, SpawnMetricsScriptableObject spawn_metrics)
         {
             SpawnData = spawn_data;
             SpawnArgs = spawn_args;
+            _spawnMetrics = spawn_metrics;
+
+            _topMargin = false;
+            _bottomMargin = false;
+            _leftMargin = false;
+            _rightMargin = false;
 
             SpawnInstructions();
 
@@ -134,71 +147,86 @@ namespace JumpMaster.Obstacles
             SpawnArgs = null;
         }
 
-        // ##### SCREEN POSITION ##### \\
-        public Vector2 ScreenPosition { get { return c_camera.WorldToScreenPoint(transform.position); } }
-        public (Vector2 min, Vector2 max) BoundsScreenPosition { get; private set; }
+        // ##### MARGINS ##### \\
 
-        public bool BoundsUnderScreen => (BoundsScreenPosition.max.y < 0);
-        public bool BoundsOverScreen => (BoundsScreenPosition.min.y > Screen.height);
-        public bool BoundsLeftOfScreen => (BoundsScreenPosition.max.x < 0);
-        public bool BoundsRightOfScreen => (BoundsScreenPosition.min.x > Screen.width);
-
-        private (Vector2 min, Vector2 max) GetBoundsScreenPosition()
+        protected virtual void CalculateMarginPosition()
         {
-            Vector2 min = c_camera.WorldToScreenPoint(c_bounds.bounds.min);
-            Vector2 max = c_camera.WorldToScreenPoint(c_bounds.bounds.max);
-            return (min, max);
+            bool changed = false;
+
+            bool topMargin = CameraController.IsPositionInTopMargin(Bounding.ScreenPosition);
+            if (_topMargin != topMargin)
+            {
+                _topMargin = topMargin;
+                changed = true;
+            }
+
+            bool bottomMargin = CameraController.IsPositionInBottomMargin(Bounding.ScreenPosition);
+            if (_bottomMargin != bottomMargin)
+            {
+                _bottomMargin = bottomMargin;
+                changed = true;
+            }
+
+            bool leftMargin = CameraController.IsPositionInLeftMargin(Bounding.ScreenPosition);
+            if (_leftMargin != leftMargin)
+            {
+                _leftMargin = leftMargin;
+                changed = true;
+            }
+
+            bool rightMargin = CameraController.IsPositionInRightMargin(Bounding.ScreenPosition);
+            if (_rightMargin != rightMargin)
+            {
+                _rightMargin = rightMargin;
+                changed = true;
+            }
+
+            if (changed)
+                OnMarginPositionChange(this);
         }
 
-        // ##### CACHED COMPONENTS ##### \\
+        private bool _topMargin;
+        private bool _bottomMargin;
+        private bool _leftMargin;
+        private bool _rightMargin;
+
+        public bool InTopMargin => _topMargin;
+        public bool InBottomMargin => _bottomMargin;
+        public bool InLeftMargin => _leftMargin;
+        public bool InRightMargin => _rightMargin;
+
+        // ##### SCREEN POSITION ##### \\
+
+        public Vector2 ScreenPosition => Bounding.ScreenPosition;
+        public bool BoundsUnderScreen => (Bounding.ScreenMax.y < 0);
+        public bool BoundsOverScreen => (Bounding.ScreenMin.y > Screen.height);
+        public bool BoundsLeftOfScreen => (Bounding.ScreenMax.x < 0);
+        public bool BoundsRightOfScreen => (Bounding.ScreenMin.x > Screen.width);
+
+        // ##### CACHE ##### \\
 
         protected float c_invertedScale { get; private set; }
 
+        public BoundingBox Bounding => c_bounding;
+        protected BoundingBox c_bounding { get; private set; }
+
         protected Camera c_camera { get; private set; }
         protected Animator c_animator { get; private set; }
-        protected Rigidbody c_rigidbody { get; private set; }
-        protected BoxCollider c_bounds { get; private set; }
-        protected SphereCollider c_sphereCol { get; private set; }
+        protected Rigidbody2D c_rigidbody { get; private set; }
 
-        private void CacheComponents()
+        private void Cache()
         {
             c_invertedScale = 1f / Data.Scale;
 
             c_camera = Camera.main;
             c_animator = GetComponent<Animator>();
-            c_rigidbody = GetComponent<Rigidbody>();
-            c_sphereCol = GetComponent<SphereCollider>();
+            c_bounding = GetComponent<BoundingBox>();
+            c_rigidbody = GetComponent<Rigidbody2D>();
 
-            CacheBounds();
-        }
-        private void CacheBounds()
-        {
-            for (int child = 0; child < transform.childCount; child++)
+            for (int i = 0; i < transform.childCount; i++)
             {
-                if (!transform.GetChild(child).name.Equals("bounds"))
-                    continue;
-                c_bounds = transform.GetChild(child).GetComponent<BoxCollider>();
+                c_bounding = transform.GetChild(i).GetComponent<BoundingBox>();
             }
-            if (c_bounds == null)
-            {
-                GameObject newBounds = Instantiate(new GameObject(), transform);
-                newBounds.transform.SetParent(transform);
-                newBounds.name = "bounds";
-                newBounds.AddComponent<BoxCollider>();
-                newBounds.GetComponent<BoxCollider>().size = Vector3.one * 2f;
-                newBounds.GetComponent<BoxCollider>().isTrigger = true;
-                c_bounds = newBounds.GetComponent<BoxCollider>();
-            }
-            c_bounds.isTrigger = true;
-        }
-
-        // ##### EXTRACTED FUNCTIONS ##### \\
-
-        private void AlignPlayerDetection()
-        {
-            Vector3 local_player_position;
-            local_player_position = transform.InverseTransformPoint(MovementController.Instance.transform.position);
-            c_sphereCol.center = new Vector3(c_sphereCol.center.x, c_sphereCol.center.y, local_player_position.z);
         }
     }
 }

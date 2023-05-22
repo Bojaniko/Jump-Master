@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfa86201dc8c262409d46d5758b81afa, type: 3}
   m_Name: SM LG 1
   m_EditorClassIdentifier: 
-  _spawnAmount: 2
+  _spawnWeight: 2
+  _spawnAmount: 3
   _maxActiveObstacles: 3
   Data: {fileID: 11400000, guid: 4cb17c4fe09b06e46a117c08eaca56d4, type: 2}
   SpawnData:

@@ -59,15 +59,14 @@ namespace JumpMaster.LevelControllers
 
             StartCoroutine(LevelLoadSequence());
 
-            Physics.gravity = new Vector3(0, -Gravity, 0);
+            Physics2D.gravity = new Vector3(0, -Gravity, 0);
         }
 
         private void LateUpdate()
         {
             if (s_resumed)
             {
-                if (OnResume != null)
-                    OnResume();
+                OnResume?.Invoke();
                 s_resumed = false;
             }
         }
@@ -83,8 +82,7 @@ namespace JumpMaster.LevelControllers
             Started = true;
             Paused = false;
 
-            if (OnStartLevel != null)
-                OnStartLevel();
+            OnStartLevel?.Invoke();
         }
 
         public static void EndLevel()
@@ -100,8 +98,7 @@ namespace JumpMaster.LevelControllers
 
             Ended = true;
 
-            if (OnEndLevel != null)
-                OnEndLevel();
+            OnEndLevel?.Invoke();
         }
 
         public static void Restart()
@@ -116,8 +113,7 @@ namespace JumpMaster.LevelControllers
             Started = false;
             Ended = false;
 
-            if (OnRestart != null)
-                OnRestart();
+            OnRestart?.Invoke();
         }
 
         public static void Pause()
@@ -132,8 +128,7 @@ namespace JumpMaster.LevelControllers
 
             Paused = true;
 
-            if (OnPause != null)
-                OnPause();
+            OnPause?.Invoke();
         }
 
         public static void Resume()
@@ -143,8 +138,6 @@ namespace JumpMaster.LevelControllers
 
             if (!Paused)
                 return;
-
-            Debug.Log("Resuming");
 
             LastPauseEndTime = Time.time;
             LastPauseDuration = LastPauseEndTime - LastPauseStartTime;

@@ -4,9 +4,12 @@ namespace JumpMaster.Movement
     {
         public readonly MovementDirection Direction;
 
-        public DashControlArgs(MovementControlArgs args, MovementDirection direction) : base(args)
+        public readonly float TargetDistance;
+
+        public DashControlArgs(MovementControlArgs args, MovementDirection direction, float target_distance) : base(args)
         {
             Direction = direction;
+            TargetDistance = target_distance;
         }
     }
 }
