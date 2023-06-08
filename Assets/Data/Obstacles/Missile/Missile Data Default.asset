@@ -12,12 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3e23d26b9efd1c42b84bc5dedc60176, type: 3}
   m_Name: Missile Data Default
   m_EditorClassIdentifier: 
-  Z_Position: 10
-  Scale: 0.5
-  ObstaclePrefab: {fileID: 4785386913337427284, guid: 383bbe74ba0140c49a3a08e915a52cf7, type: 3}
-  GameObjectDestroyDelayMS: 150
-  DistanceFromScreenDestroy: 3
-  WarningData: {fileID: 11400000, guid: 3c29fcffffe8baf41830085953a567bb, type: 2}
-  ThrustSFX: {fileID: 11400000, guid: e29cd917d810db549ba98d7bcc5c61d2, type: 2}
-  ExplosionSFX: {fileID: 11400000, guid: b0a72cf98e073a94c9ff500ed70d7085, type: 2}
-  ExplosionPrefab: {fileID: 4188914866616122131, guid: 3d03bef73c381d1449f5a73fa9049916, type: 3}
+  _zPosition: 10
+  _scale: 0.5
+  _obstaclePrefab: {fileID: 4785386913337427284, guid: 383bbe74ba0140c49a3a08e915a52cf7, type: 3}
+  _warningData: {fileID: 11400000, guid: 3c29fcffffe8baf41830085953a567bb, type: 2}
+  _thrustSFX: {fileID: 11400000, guid: e29cd917d810db549ba98d7bcc5c61d2, type: 2}
+  _explosionSFX: {fileID: 11400000, guid: b0a72cf98e073a94c9ff500ed70d7085, type: 2}
+  _explosionPrefab: {fileID: 4188914866616122131, guid: 3d03bef73c381d1449f5a73fa9049916, type: 3}
+  _explosionDestroyDelayMS: 150

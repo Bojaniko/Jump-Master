@@ -25,10 +25,25 @@ namespace JumpMaster.Movement
             return base.GetHashCode();
         }
 
+        /// <summary>
+        /// Direction of (0, 0)
+        /// </summary>
         public static MovementDirection Zero { get { return new(0, 0); } }
+        /// <summary>
+        /// Direction of (1, 0)
+        /// </summary>
         public static MovementDirection Up { get { return new(1, 0); } }
+        /// <summary>
+        /// Direction of (-1, 0)
+        /// </summary>
         public static MovementDirection Down { get { return new(-1, 0); } }
+        /// <summary>
+        /// Direction of (0, -1)
+        /// </summary>
         public static MovementDirection Left { get { return new(0, -1); } }
+        /// <summary>
+        /// Direction of (0, 1);
+        /// </summary>
         public static MovementDirection Right { get { return new(0, 1); } }
     }
 }

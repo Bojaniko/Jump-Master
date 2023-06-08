@@ -1,0 +1,24 @@
+{
+    "name": "JumpMaster.Obstacles",
+    "rootNamespace": "JumpMaster.Obstacles",
+    "references": [
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:24e8c0082345c3c45b82e7e9694079ff",
+        "GUID:8c79d9aab6208874c8bbec5612e697fc",
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:8902709cfbd7c354a897e06e626ee8ae",
+        "GUID:91bb4a0094495fb48a49ef8936082a4f",
+        "GUID:5f2c2090418cec6408840530e172e004",
+        "GUID:4bfabcd1e4caeee4699a93126ae5ee70",
+        "GUID:859fd48c4cd296c4f9d49929b387c0e9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

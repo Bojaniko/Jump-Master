@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 
 namespace JumpMaster.Movement
 {
@@ -29,6 +29,8 @@ namespace JumpMaster.Movement
 
         public override bool CanExit(IMovementControl exit_control)
         {
+            if (exit_control.ActiveState.Equals(MovementState.FLOATING))
+                return false;
             if (Time.time - ControlArgs.StartTime < ControlData.MinDuration)
                 return false;
             return true;
@@ -37,7 +39,7 @@ namespace JumpMaster.Movement
 
         protected override bool CanStartControl()
         {
-            if (!LevelController.Started)
+            if (!LevelManager.Started)
                 return false;
             return true;
         }
@@ -48,9 +50,9 @@ namespace JumpMaster.Movement
 
             Vector3 hang_position = Vector3.zero;
             if (_controlArgs.Direction.Horizontal == 1)
-                hang_position = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width - ((Controller.BoundsScreenPosition.max.x - Controller.BoundsScreenPosition.min.x) / 2), 0));
+                hang_position = Camera.main.ScreenToWorldPoint(new Vector2(Screen.width - ((Controller.Bounds.ScreenMax.x - Controller.Bounds.ScreenMin.x) / 2), 0));
             if (_controlArgs.Direction.Horizontal == -1)
-                hang_position = Camera.main.ScreenToWorldPoint(new Vector2((Controller.BoundsScreenPosition.max.x - Controller.BoundsScreenPosition.min.x) / 2, 0));
+                hang_position = Camera.main.ScreenToWorldPoint(new Vector2((Controller.Bounds.ScreenMax.x - Controller.Bounds.ScreenMin.x) / 2, 0));
             hang_position.y = Controller.transform.position.y;
             hang_position.z = Controller.transform.position.z;
             Controller.transform.position = hang_position;
@@ -74,12 +76,12 @@ namespace JumpMaster.Movement
             {
                 if (Controller.ControlledRigidbody.velocity.x < -ControlData.MinStickVelocity)
                 {
-                    if (Controller.BoundsScreenPosition.min.x > ControlData.StickDistanceScreen)
+                    if (Controller.Bounds.ScreenMin.x > ControlData.StickDistanceScreen)
                         return;
                 }
                 else
                 {
-                    if (Controller.BoundsScreenPosition.min.x >= 0)
+                    if (Controller.Bounds.ScreenMin.x >= 0)
                         return;
                 }
                 OnExplicitDetection?.Invoke(this, new HangControlArgs(new(Controller), MovementDirection.Left));
@@ -89,12 +91,12 @@ namespace JumpMaster.Movement
             {
                 if (Controller.ControlledRigidbody.velocity.x > ControlData.MinStickVelocity)
                 {
-                    if (Controller.BoundsScreenPosition.max.x < _hangFromScreenWidth)
+                    if (Controller.Bounds.ScreenMax.x < _hangFromScreenWidth)
                         return;
                 }
                 else
                 {
-                    if (Controller.BoundsScreenPosition.max.x <= Screen.width)
+                    if (Controller.Bounds.ScreenMax.x <= Screen.width)
                         return;
                 }
                 OnExplicitDetection?.Invoke(this, new HangControlArgs(new(Controller), MovementDirection.Right));

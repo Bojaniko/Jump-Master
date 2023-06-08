@@ -1,0 +1,19 @@
+{
+    "name": "JumpMaster.UI.Movement",
+    "rootNamespace": "",
+    "references": [
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:8902709cfbd7c354a897e06e626ee8ae",
+        "GUID:3ae9e763be00d874381d9750a832ff88",
+        "GUID:5f2c2090418cec6408840530e172e004"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

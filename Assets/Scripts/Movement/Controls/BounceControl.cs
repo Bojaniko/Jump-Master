@@ -1,7 +1,5 @@
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
-
 namespace JumpMaster.Movement
 {
     public class BounceControl : MovementControl<BounceControlDataSO, BounceControlArgs>, IExplicitControl, ITransitionable

@@ -3,13 +3,14 @@ using System.Reflection;
 
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
+using JumpMaster.CameraControls;
 
 using Studio28.Probability;
 
 namespace JumpMaster.Obstacles
 {
-    public class ObstacleLevelController : LevelControllerInitializable
+    public class ObstacleLevelController : LevelController
     {
         private static ObstacleLevelController s_instance;
         public static ObstacleLevelController Instance
@@ -46,7 +47,11 @@ namespace JumpMaster.Obstacles
             InitializeControllers();
 
             _margins = new(_allObstacles);
+            _spawnPoints = new(_data.HorizontalEdgePoints, _data.VerticalEdgePoints, CameraController.Instance.Data.ResolutionAspectChange);
         }
+
+        public static ObstacleSpawnPointTracker SpawnPoints => Instance._spawnPoints;
+        private ObstacleSpawnPointTracker _spawnPoints;
 
         public static ObstacleMarginTracker Margins => Instance._margins;
         private ObstacleMarginTracker _margins;
@@ -56,13 +61,13 @@ namespace JumpMaster.Obstacles
 
         private void Update()
         {
-            if (!LevelController.Started)
+            if (!LevelManager.Started)
                 return;
 
-            if (LevelController.Ended)
+            if (LevelManager.Ended)
                 return;
 
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
             TryStartNewWave();
@@ -186,7 +191,7 @@ namespace JumpMaster.Obstacles
             BindControllerActiveCount();
 
             _waveController = new();
-            _waveController.NewWave(_data.GetRandomNormalWave(), _controllers.ToArray());
+            _waveController.NewWave(_data.DefaultWaveData, _controllers.ToArray());
 
             CalculateAllObstacles();
         }
@@ -196,7 +201,7 @@ namespace JumpMaster.Obstacles
             _controllers = new();
             foreach (System.Type ct in _controllerTypes)
             {
-                IObstacleController controller = (IObstacleController)System.Activator.CreateInstance(ct, _data.DefaultControllersData.GetSpawnMetricsForControllerType(ct));
+                IObstacleController controller = (IObstacleController)System.Activator.CreateInstance(ct, _data.DefaultWaveData.ControllersData.GetSpawnMetricsForControllerType(ct));
                 _controllers.Add(controller);
             }
         }
@@ -206,7 +211,7 @@ namespace JumpMaster.Obstacles
             _controllerTypes = new();
             foreach (Assembly asm in System.AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (asm.GetName().ToString().Contains("Obstacle"))
+                if (asm.GetName().Name.Equals("JumpMaster.Obstacles"))
                 {
                     foreach (System.Type t in asm.GetTypes())
                     {

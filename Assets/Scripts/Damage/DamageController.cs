@@ -2,14 +2,14 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 
 namespace JumpMaster.Damage
 {
     public delegate void DamageDelegate(IDamageRecord record);
 
     [DisallowMultipleComponent]
-    public class DamageController : LevelControllerInitializable
+    public class DamageController : LevelController
     {
         public static DamageController Instance
         {
@@ -50,7 +50,7 @@ namespace JumpMaster.Damage
 
         private void Update()
         {
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
             if (_registrations.Count == 0)

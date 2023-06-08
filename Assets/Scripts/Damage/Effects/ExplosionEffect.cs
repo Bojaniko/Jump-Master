@@ -1,11 +1,11 @@
 using UnityEngine;
 
-using JumpMaster.Structure;
+using JumpMaster.Core;
 
 namespace JumpMaster.Damage
 {
     [RequireComponent(typeof(ParticleSystem))]
-    public class ExplosionEffect : Initializable
+    public class ExplosionEffect : MonoBehaviour, IInitializable
     {
         public static ExplosionEffect Generate(GameObject particle_prefab)
         {
@@ -15,11 +15,13 @@ namespace JumpMaster.Damage
                 return null;
             ExplosionEffect ee = go.AddComponent<ExplosionEffect>();
             ee.Initialize();
-            ee.Initialized = true;
+            ee._initialized = true;
             return ee;
         }
 
-        protected override void Initialize()
+        public bool Initialized => _initialized;
+        private bool _initialized;
+        private void Initialize()
         {
             Cache();
         }

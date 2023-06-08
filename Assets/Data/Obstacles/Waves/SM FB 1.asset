@@ -15,11 +15,11 @@ MonoBehaviour:
   _spawnWeight: 6
   _spawnAmount: 4
   _maxActiveObstacles: 3
+  _spawnPointCooldown: 1
   Data: {fileID: 11400000, guid: 76ea0619514ecf74e95cb7658bbe5403, type: 2}
   SpawnData:
   - {fileID: 11400000, guid: b5ffa807753ccfa4c872b8161f88c883, type: 2}
-  SpawnChance: 40
-  Interval: 5
-  SpawnPoints: 8
-  ScreenOverlapLimit: 50
-  SpawnOffset: 0.5
+  _spawnChance: 30
+  _interval: 10
+  _secondaryInterval: 2
+  _spawnOffset: 0.5

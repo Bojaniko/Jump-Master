@@ -5,19 +5,22 @@ namespace JumpMaster.Obstacles
     [CreateAssetMenu(fileName = "Missile Spawn Metrics", menuName = "Game/Obstacles/Metrics/Missile Spawn")]
     public class MissileSpawnMetricsSO : SpawnMetricsSO<MissileSO, MissileSpawnSO>
     {
-        [Range(0, 100)]
-        public int SpawnChance = 20;
+        /// <summary>
+        /// The probability of a missile spawning.
+        /// </summary>
+        public int SpawnChance => _spawnChance;
+        [SerializeField, Range(0, 100), Tooltip("The probability of a missile spawning.")] private int _spawnChance = 20;
 
-        [Range(1f, 100f)]
-        public float Interval = 5f;
+        /// <summary>
+        /// The interval between each missile try spawn.
+        /// </summary>
+        public float Interval => _interval;
+        [SerializeField, Range(0f, 30f), Tooltip("The interval between each missile try spawn.")] private float _interval = 5f;
 
-        [Range(0, 50)]
-        public int ScreenMarginPercentage = 20;
-
-        [Range(0, 500)]
-        public int ScreenOverlapLimit = 50;
-
-        [Range(0f, 5f)]
-        public float SpawnOffset = 0.5f;
+        /// <summary>
+        /// The positional offset in the specified direction when the missile is spawned.
+        /// </summary>
+        public float SpawnOffset => _spawnOffset;
+        [SerializeField, Range(0f, 5f), Tooltip("The positional offset in the specified direction when the missile is spawned.")] private float _spawnOffset = 0.5f;
     }
 }

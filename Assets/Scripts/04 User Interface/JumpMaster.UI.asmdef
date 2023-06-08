@@ -1,0 +1,19 @@
+{
+    "name": "JumpMaster.UI",
+    "rootNamespace": "JumpMaster.UI",
+    "references": [
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:3ae9e763be00d874381d9750a832ff88",
+        "GUID:5f2c2090418cec6408840530e172e004",
+        "GUID:8655fcbb071c3fc44832f0f20cbbecb8"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

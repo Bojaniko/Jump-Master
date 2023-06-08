@@ -1,15 +1,17 @@
 using System.Collections.Generic;
+using System.Reflection;
 
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
+using JumpMaster.Core.Physics;
 
 namespace JumpMaster.Movement
 {
-    public enum MovementState { STILL, JUMPING, JUMP_CHARGING, DASHING, HANGING, FLOATING, FALLING, BOUNCING };
+    public enum MovementState { STILL, JUMPING, DASHING, HANGING, FLOATING, FALLING, BOUNCING, LEVITATING };
 
-    [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
-    public class MovementController : LevelControllerInitializable
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class MovementController : LevelController
     {
         public MovementControllerDataSO MovementControllerData;
 
@@ -41,13 +43,13 @@ namespace JumpMaster.Movement
 
             Cache();
 
-            LevelController.OnPause += Pause;
-            LevelController.OnEndLevel += End;
+            LevelManager.OnPause += Pause;
+            LevelManager.OnEndLevel += End;
 
-            LevelController.OnLoad += Resume;
-            LevelController.OnResume += Resume;
+            LevelManager.OnLoad += Resume;
+            LevelManager.OnResume += Resume;
 
-            LevelController.OnRestart += Restart;
+            LevelManager.OnRestart += Restart;
 
             Restart();
         }
@@ -73,7 +75,6 @@ namespace JumpMaster.Movement
 
             RegisterControls();
             ResetPlayerPosition();
-            BoundsScreenPosition = GetBoundsScreenPosition();
 
             IMovementControl still_control = GetControl<StillControl>();
             StartControl(still_control, new(this));
@@ -81,21 +82,19 @@ namespace JumpMaster.Movement
 
         private void FixedUpdate()
         {
-            if (!LevelController.Started)
+            if (!LevelManager.Started)
                 return;
 
-            if (LevelController.Ended)
+            if (LevelManager.Ended)
                 return;
 
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
             if (ActiveControl == null)
                 return;
 
             ControlledRigidbody.velocity = ActiveControl.GetCurrentVelocity();
-
-            UpdateScreenPosition();
 
             OnMovementUpdate?.Invoke();
         }
@@ -116,10 +115,10 @@ namespace JumpMaster.Movement
 
         private void TryStartControl(IMovementControl control, MovementControlArgs start_args)
         {
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
-            if (LevelController.Ended)
+            if (LevelManager.Ended)
                 return;
 
             if (!ActiveControl.CanExit(control))
@@ -133,10 +132,10 @@ namespace JumpMaster.Movement
 
         private void ForceStartControl(IMovementControl control, MovementControlArgs start_args)
         {
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
-            if (LevelController.Ended)
+            if (LevelManager.Ended)
                 return;
 
             StartControl(control, start_args);
@@ -193,7 +192,7 @@ namespace JumpMaster.Movement
 
         private void RegisterControls()
         {
-            if (_controls == null)
+            /*if (_controls == null)
                 _controls = new();
 
             JumpControl jump_control = new(this, MovementControllerData.JumpControlData);
@@ -212,8 +211,17 @@ namespace JumpMaster.Movement
             _controls.Add(float_control);
             _controls.Add(hang_control);
             _controls.Add(charged_jump_control);
-            _controls.Add(bounce_control);
+            _controls.Add(bounce_control);*/
 
+            GetControlTypes();
+
+            GenerateControls();
+
+            RegisterContracts();
+        }
+
+        private void RegisterContracts()
+        {
             foreach (IMovementControl control in _controls)
             {
                 if (control is IExplicitControl explicit_control)
@@ -225,29 +233,41 @@ namespace JumpMaster.Movement
             }
         }
 
-        // ##### POSITION ##### \\
+        private void GenerateControls()
+        {
+            _controls = new();
+            foreach (System.Type tControl in _controlTypes)
+            {
+                IMovementControl control = (IMovementControl)System.Activator.CreateInstance(tControl, this, MovementControllerData.GetControlDataForControlType(tControl));
+                _controls.Add(control);
+            }
+        }
 
-        public Vector2 ScreenPosition { get; private set; }
-        public (Vector2 min, Vector2 max) BoundsScreenPosition { get; private set; }
+        private List<System.Type> _controlTypes;
+        private void GetControlTypes()
+        {
+            _controlTypes = new();
+            foreach (Assembly asm in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (asm.GetName().Name.Equals("JumpMaster.Movement"))
+                {
+                    foreach (System.Type t in asm.GetTypes())
+                    {
+                        if (t.GetInterface("IMovementControl") != null && !t.IsAbstract)
+                            _controlTypes.Add(t);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // ##### POSITION ##### \\
 
         private void ResetPlayerPosition()
         {
             Vector3 startPosition = c_camera.ScreenToWorldPoint(new Vector3(Screen.width * 0.5f, 0f, MovementControllerData.Z_Position));
-            startPosition.y += (Bounds.bounds.max.y - Bounds.bounds.min.y) * 0.5f;
+            startPosition.y += (Bounds.WorldMax.y - Bounds.WorldMin.y) * 0.5f;
             transform.position = startPosition;
-        }
-
-        private void UpdateScreenPosition()
-        {
-            ScreenPosition = c_camera.WorldToScreenPoint(transform.position);
-            BoundsScreenPosition = GetBoundsScreenPosition();
-        }
-
-        private (Vector2 min, Vector2 max) GetBoundsScreenPosition()
-        {
-            Vector2 min = Camera.main.WorldToScreenPoint(Bounds.bounds.min);
-            Vector3 max = Camera.main.WorldToScreenPoint(Bounds.bounds.max);
-            return (min, max);
         }
 
         // ##### CONSTRAINT ##### \\
@@ -282,8 +302,8 @@ namespace JumpMaster.Movement
 
         private Camera c_camera;
 
-        public BoxCollider2D Bounds => c_bounds;
-        private BoxCollider2D c_bounds;
+        public BoundingBox Bounds => c_bounds;
+        private BoundingBox c_bounds;
 
         public Rigidbody2D ControlledRigidbody => c_rigidbody;
         private Rigidbody2D c_rigidbody;
@@ -291,8 +311,12 @@ namespace JumpMaster.Movement
         private void Cache()
         {
             c_camera = Camera.main;
-            c_bounds = GetComponent<BoxCollider2D>();
             c_rigidbody = GetComponent<Rigidbody2D>();
+
+            for (int c = 0; c < transform.childCount; c++)
+            {
+                c_bounds = transform.GetChild(c).GetComponent<BoundingBox>();
+            }
         }
     }
 }

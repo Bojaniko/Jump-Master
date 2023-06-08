@@ -16,5 +16,5 @@ MonoBehaviour:
   ReferenceResolution: {x: 720, y: 1600}
   _margin: 200
   _ascendingSpeed: 0.6
-  _reachEdgeSpeed: 5
+  _reachEdgeSpeed: 30
   _maxScreenHeightPosition: 450

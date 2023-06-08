@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca1be23edb2c13c4bb31581403210b3f, type: 3}
   m_Name: Falling Bomb Spawn Data 0
   m_EditorClassIdentifier: 
-  FallSpeed: 1.5
-  DetectionRadius: 5
-  DetectionShowDistance: 6
-  ArmingDurationMS: 800
-  ExplosionData: {fileID: 11400000, guid: c96c4e3da0465cc43865ecda6fe496c2, type: 2}
+  _fallSpeed: 1.5
+  _detectionRadius: 5
+  _detectionShowDistance: 6
+  _armingDuration: 800
+  _explosionData: {fileID: 11400000, guid: c96c4e3da0465cc43865ecda6fe496c2, type: 2}

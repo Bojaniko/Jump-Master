@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a88e42a4b14a274d8df4e281e55a447, type: 3}
   m_Name: Obstacle Controller Data
   m_EditorClassIdentifier: 
+  _defaultWaveData: {fileID: 11400000, guid: aa5f45714b24d7b449f293b6c349e698, type: 2}
+  _verticalEdgePoints: 10
+  _horizontalEdgePoints: 3
   WaveInterval: 5
   BossWaveCount: 3
   MaxObstaclesAtOnce: 15
-  TopSpawnMarginPercentage: 10
-  DefaultControllersData: {fileID: 11400000, guid: a732b85522140d249b963ed3f80f4dc9, type: 2}
   NormalWaveData:
   - {fileID: 11400000, guid: f2922fa7a8ef53b49baef9af1bdb5d36, type: 2}
   - {fileID: 11400000, guid: dafd0fbd7688e8040af89fc77be3b7b9, type: 2}

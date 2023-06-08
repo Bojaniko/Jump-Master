@@ -20,7 +20,11 @@ namespace JumpMaster.Obstacles
         public Vector2[] EdgePointsRight => _pointsRight;
         private Vector2[] _pointsRight;
 
-        public ObstacleControllersSO DefaultControllersData;
+        /// <summary>
+        /// The default wave data for initializing the obstacle controllers.
+        /// </summary>
+        public WaveSO DefaultWaveData => _defaultWaveData;
+        [SerializeField, Tooltip("The default wave data for initializing the obstacle controllers. Must contain spawn data for all the controllers.")] private WaveSO _defaultWaveData;
 
         /// <summary>
         /// The amount of points on the vertical edge of the screen.

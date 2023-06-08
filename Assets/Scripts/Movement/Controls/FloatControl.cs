@@ -1,16 +1,11 @@
-using JumpMaster.LevelControllers;
-using JumpMaster.Controls;
-
 using UnityEngine;
+
+using JumpMaster.LevelTrackers;
 
 namespace JumpMaster.Movement
 {
-    public class FloatControl : MovementControl<FloatControlDataSO, FloatControlArgs>, ITransitionable, IInputableControl, IDirectional
+    public class FloatControl : MovementControl<FloatControlDataSO, FloatControlArgs>, IDirectional, ITransitionable
     {
-        public bool ChargingJump { get; private set; }
-
-        private float _pauseTime;
-
         private Vector2 _direction;
 
         public MovementDirection Direction
@@ -23,39 +18,27 @@ namespace JumpMaster.Movement
             }
         }
 
-        public event ControlInputEventHandler OnInputDetected;
         public event TransitionableControlEventHandler OnTransitionable;
 
-        public FloatControl(MovementController controller, FloatControlDataSO data) : base(controller, data)
-        {
-            _pauseTime = 0f;
-
-            InputController.Instance.OnHoldStarted += StartJumpCharge;
-            InputController.Instance.OnHoldPerformed += () => ChargingJump = false;
-            InputController.Instance.OnHoldCancelled += CancelJumpCharge;
-        }
+        public FloatControl(MovementController controller, FloatControlDataSO data) : base(controller, data) { }
         public override MovementState ActiveState { get { return MovementState.FLOATING; } }
 
-        protected override bool CanStartControl()
-        {
-            if (ChargingJump)
-                return false;
-            return true;
-        }
+        protected override bool CanStartControl() => true;
         protected override void StartControl()
         {
             Controller.ControlledRigidbody.gravityScale = 0f;
-
             _direction = Vector2.up * _controlArgs.Direction.Vertical * ControlArgs.Strength;
+            _transitionTimer = TimeTracker.Instance.StartTimeTracking(Transition, ControlData.Duration);
         }
 
-        public override bool CanExit(IMovementControl exit_control)
-        {
-            return true;
-        }
+        public override bool CanExit(IMovementControl exit_control) => true;
         protected override void ExitControl()
         {
-            _pauseTime = 0f;
+            if (_transitionTimer != null)
+            {
+                TimeTracker.Instance.CancelTimeTracking(_transitionTimer);
+                _transitionTimer = null;
+            }
         }
 
         public override Vector2 GetCurrentVelocity()
@@ -64,51 +47,17 @@ namespace JumpMaster.Movement
         }
 
         public override void Pause() { }
-        public override void Resume()
-        {
-            _pauseTime += LevelController.LastPauseDuration;
-        }
-        protected override void OnMovementUpdate()
-        {
-            if (!Started)
-                return;
-
-            if (ChargingJump)
-                return;
-
-            TryTransition();
-        }
-
-        // ##### TRANSITION ##### \\
+        public override void Resume() { }
+        protected override void OnMovementUpdate() { }
 
         public MovementState TransitionState => MovementState.FALLING;
 
-        private void TryTransition()
+        private TimeRecord _transitionTimer;
+
+        private void Transition()
         {
-            if (Time.time - ControlArgs.StartTime + _pauseTime < ControlData.Duration)
-                return;
-
-            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
-        }
-
-        // ##### PRE JUMP CHARGE INPUT ##### \\
-
-        private void StartJumpCharge(Vector2 position, float min_hold_duration)
-        {
-            if (!LevelController.Started)
-                return;
-
-            if (!Controller.GetControl<ChargedJumpControl>().CanStart())
-                return;
-
-            if (OnInputDetected != null)
-                OnInputDetected(this, new FloatControlArgs(new(Controller), MovementDirection.Down));
-            ChargingJump = true;
-        }
-
-        private void CancelJumpCharge()
-        {
-            ChargingJump = false;
+            _transitionTimer = null;
+            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller));
         }
     }
 }

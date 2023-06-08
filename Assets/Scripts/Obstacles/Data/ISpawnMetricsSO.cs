@@ -5,5 +5,6 @@ namespace JumpMaster.Obstacles
         public int SpawnWeight { get; }
         public int SpawnAmount { get; }
         public int MaxActiveObstacles { get; }
+        public float SpawnPointCooldown { get; }
     }
 }

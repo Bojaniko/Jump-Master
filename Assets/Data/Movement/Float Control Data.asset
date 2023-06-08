@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1abffd8e9791f14e901e50233c9c302, type: 3}
   m_Name: Float Control Data
   m_EditorClassIdentifier: 
-  Force: 0.5
-  Duration: 1
+  _force: 0.5
+  _duration: 1

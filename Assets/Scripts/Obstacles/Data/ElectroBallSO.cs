@@ -12,6 +12,12 @@ namespace JumpMaster.Obstacles
         [SerializeField, Range(0f, 5f), Tooltip("The vertical distance the ball stops from the player.")] private float _stopPositionFromPlayer;
 
         /// <summary>
+        /// The delay (s) for which the ball stays in place after closing.
+        /// </summary>
+        public float PostCloseDelay => _postCloseDelay;
+        [SerializeField, Range(0f, 5f), Tooltip("The delay (s) for which the ball stays in place after closing.")] private float _postCloseDelay;
+
+        /// <summary>
         /// The speed at which the ball escapes the screen when finished intercepting.
         /// </summary>
         public float EscapeMovementSpeed => _escapeMovementSpeed;

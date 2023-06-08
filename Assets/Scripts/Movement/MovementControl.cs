@@ -6,7 +6,7 @@ namespace JumpMaster.Movement
         where Data : MovementControlDataSO
         where Args : MovementControlArgs
     {
-        public MovementControl(MovementController controller, Data data)
+        protected MovementControl(MovementController controller, Data data)
         {
             _controller = controller;
 
@@ -20,8 +20,11 @@ namespace JumpMaster.Movement
         public event ControlActivityEventHandler OnStart;
         public event ControlActivityEventHandler OnExit;
 
-        private bool _started;
+        /// <summary>
+        /// Is this control started?
+        /// </summary>
         public bool Started => _started;
+        private bool _started;
 
         protected Args _controlArgs;
         public MovementControlArgs ControlArgs => _controlArgs;

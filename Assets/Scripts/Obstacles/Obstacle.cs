@@ -1,13 +1,13 @@
 using UnityEngine;
 
-using JumpMaster.Structure;
+using JumpMaster.Core;
+using JumpMaster.Core.Physics;
 using JumpMaster.CameraControls;
-using JumpMaster.LevelControllers;
 
 namespace JumpMaster.Obstacles
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
-    public abstract class Obstacle<ObstacleScriptableObject, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments> : Initializable, IObstacle
+    public abstract class Obstacle<ObstacleScriptableObject, SpawnScriptableObject, SpawnMetricsScriptableObject, SpawnArguments> : MonoBehaviour, IInitializable, IObstacle
         where ObstacleScriptableObject : ObstacleSO
         where SpawnScriptableObject : SpawnSO
         where SpawnMetricsScriptableObject : SpawnMetricsSO<ObstacleScriptableObject, SpawnScriptableObject>
@@ -20,7 +20,7 @@ namespace JumpMaster.Obstacles
 
         public void Generate(ObstacleSO data, IObstacleController controller)
         {
-            if (Initialized)
+            if (_initialized)
                 return;
 
             if (!data.GetType().Equals(typeof(ObstacleScriptableObject)))
@@ -31,7 +31,7 @@ namespace JumpMaster.Obstacles
             InitializeBase();
             Initialize();
 
-            Initialized = true;
+            _initialized = true;
 
             gameObject.SetActive(false);
         }
@@ -62,7 +62,7 @@ namespace JumpMaster.Obstacles
 
         private void InitializeBase()
         {
-            LevelController.OnRestart += Restart;
+            LevelManager.OnRestart += Restart;
 
             Cache();
 
@@ -81,7 +81,9 @@ namespace JumpMaster.Obstacles
         protected abstract void OnFixedUpdate();
         protected abstract bool IsDespawnable();
 
-        protected abstract override void Initialize();
+        public bool Initialized => _initialized;
+        private bool _initialized;
+        protected abstract void Initialize();
 
         // ##### EVENTS ##### \\
 

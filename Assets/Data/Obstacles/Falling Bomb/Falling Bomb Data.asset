@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7465c54282275494596c380036957f40, type: 3}
   m_Name: Falling Bomb Data
   m_EditorClassIdentifier: 
-  Z_Position: 15
-  Scale: 0.5
-  ObstaclePrefab: {fileID: 2548158984294617621, guid: 3b2b37994f417254cb68fbeeefeaceb2, type: 3}
-  GameObjectDestroyDelayMS: 150
-  DetectionShowDurationMS: 500
-  ArmedLightColor: {r: 5.992157, g: 0, b: 0, a: 1}
-  UnarmedLightColor: {r: 0, g: 5.992157, b: 0, a: 1}
-  ExplosionPrefab: {fileID: 9089103927491320349, guid: c62ddd5061f62c1469314e90f76b3f1c, type: 3}
-  ArmingBeepSound: {fileID: 11400000, guid: 6148dde467e6d7f4da5265028a229cec, type: 2}
-  ExplosionSound: {fileID: 11400000, guid: b0a72cf98e073a94c9ff500ed70d7085, type: 2}
+  _zPosition: 15
+  _scale: 0.5
+  _obstaclePrefab: {fileID: 2548158984294617621, guid: 3b2b37994f417254cb68fbeeefeaceb2, type: 3}
+  _detectionShowDuration: 500
+  _armedLightColor: {r: 5.992157, g: 0, b: 0, a: 1}
+  _unarmedLightColor: {r: 0, g: 5.992157, b: 0, a: 1}
+  _explosionPrefab: {fileID: 9089103927491320349, guid: c62ddd5061f62c1469314e90f76b3f1c, type: 3}
+  _explosionDestroyDelay: 150
+  _armingBeepSound: {fileID: 11400000, guid: 6148dde467e6d7f4da5265028a229cec, type: 2}
+  _explosionSound: {fileID: 11400000, guid: b0a72cf98e073a94c9ff500ed70d7085, type: 2}

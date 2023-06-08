@@ -9,17 +9,29 @@ namespace JumpMaster.Obstacles
     [CreateAssetMenu(fileName = "Missile Data", menuName = "Game/Obstacles/Data/Missile")]
     public class MissileSO : ObstacleSO
     {
-        [Range(10, 500)]
-        public int GameObjectDestroyDelayMS = 150;
+        public MissileWarningSO WarningData => _warningData;
+        [SerializeField] private MissileWarningSO _warningData;
 
-        [Range(0f, 10f)]
-        public float DistanceFromScreenDestroy = 3f;
+        [Header("Sound Effects")]
 
-        public MissileWarningSO WarningData;
+        [SerializeField] private MinMaxSoundEffectInfo _thrustSFX;
+        public MinMaxSoundEffectInfo ThrustSFX => _thrustSFX;
 
-        public MinMaxSoundEffectInfo ThrustSFX;
-        public RandomizedSoundEffectInfo ExplosionSFX;
+        public RandomizedSoundEffectInfo ExplosionSFX => _explosionSFX;
+        [SerializeField] private RandomizedSoundEffectInfo _explosionSFX;
 
-        public GameObject ExplosionPrefab;
+        [Header("Explosion")]
+
+        [SerializeField, Tooltip("The effect which is instantiated when the missile explodes.")] private GameObject _explosionPrefab;
+        /// <summary>
+        /// The effect which is instantiated when the missile explodes.
+        /// </summary>
+        public GameObject ExplosionPrefab => _explosionPrefab;
+
+        /// <summary>
+        /// The delay (ms) at which the missile is destroyed after it explodes.
+        /// </summary>
+        public int ExplosionDestroyDelayMS => _explosionDestroyDelayMS;
+        [SerializeField, Range(10, 500), Tooltip("The delay (ms) at which the missile is destroyed after it explodes.")] private int _explosionDestroyDelayMS = 150;
     }
 }

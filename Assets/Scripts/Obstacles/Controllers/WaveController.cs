@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 
 namespace JumpMaster.Obstacles
 {
@@ -24,7 +24,7 @@ namespace JumpMaster.Obstacles
             StartedTime = 0f;
             EndedTime = 0f;
 
-            LevelController.OnRestart += Restart;
+            LevelManager.OnRestart += Restart;
         }
 
         public void NewWave(WaveSO data, IObstacleController[] controllers)

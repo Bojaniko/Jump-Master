@@ -2,33 +2,22 @@ using System.Collections;
 
 using UnityEngine;
 
-using JumpMaster.Structure;
 using JumpMaster.Movement;
 using JumpMaster.Damage;
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 
 using Studio28.Audio;
 
 namespace JumpMaster.Obstacles
 {
-    public sealed class FallingBombArgs : SpawnArgs
-    {
-        public readonly int SpawnPositionOrder;
-
-        public FallingBombArgs(Vector3 screen_position, int spawn_position_order) : base(screen_position)
-        {
-            SpawnPositionOrder = spawn_position_order;
-        }
-    }
-
     [RequireComponent(typeof(CircleCollider2D))]
-    public class FallingBomb : Obstacle<FallingBombSO, FallingBombSpawnSO, FallingBombSpawnMetricsSO, FallingBombArgs>
+    public class FallingBomb : Obstacle<FallingBombSO, FallingBombSpawnSO, FallingBombSpawnMetricsSO, SpawnArgs>
     {
         protected override void Initialize()
         {
-            LevelController.OnPause += Pause;
-            LevelController.OnResume += Resume;
-            LevelController.OnEndLevel += EndLevel;
+            LevelManager.OnPause += Pause;
+            LevelManager.OnResume += Resume;
+            LevelManager.OnEndLevel += EndLevel;
 
             CacheParts();
 
@@ -58,7 +47,7 @@ namespace JumpMaster.Obstacles
 
         protected override void OnFixedUpdate()
         {
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
             if (_explodeCoroutine != null)
@@ -172,7 +161,7 @@ namespace JumpMaster.Obstacles
 
         private void ResetExplosion(FallingBombSpawnSO spawn_data)
         {
-            _armingDuration = spawn_data.ArmingDurationMS / 1000f;
+            _armingDuration = spawn_data.ArmingDuration / 1000f;
 
             c_bombLightRef.SetColor("_EmissionColor", Data.UnarmedLightColor);
         }
@@ -226,8 +215,8 @@ namespace JumpMaster.Obstacles
 
         private void CacheParts()
         {
-            c_detectionShowDuration = Data.DetectionShowDurationMS / 1000f;
-            c_gameObjectDestroyDuration = Data.GameObjectDestroyDelayMS / 1000f;
+            c_detectionShowDuration = Data.DetectionShowDuration / 1000f;
+            c_gameObjectDestroyDuration = Data.ExplosionDestroyDelay / 1000f;
 
             c_explosionEffect = ExplosionEffect.Generate(Data.ExplosionPrefab);
 

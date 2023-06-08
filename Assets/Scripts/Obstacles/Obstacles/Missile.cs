@@ -6,7 +6,7 @@ using Studio28.Audio.SFX;
 using Studio28.Audio;
 
 using JumpMaster.SFX;
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 using JumpMaster.UI;
 
 namespace JumpMaster.Obstacles
@@ -16,7 +16,7 @@ namespace JumpMaster.Obstacles
     public sealed class MissileSpawnArgs : SpawnArgs
     {
         public readonly MissileDirection Direction;
-        public MissileSpawnArgs(Vector3 screen_position, MissileDirection direction) : base(screen_position)
+        public MissileSpawnArgs(Vector2 screen_position, MissileDirection direction) : base(screen_position)
         {
             Direction = direction;
         }
@@ -32,9 +32,9 @@ namespace JumpMaster.Obstacles
 
             c_particles.transform.localScale = Vector3.one * Data.Scale;
 
-            LevelController.OnPause += Pause;
-            LevelController.OnResume += Resume;
-            LevelController.OnEndLevel += EndLevel;
+            LevelManager.OnPause += Pause;
+            LevelManager.OnResume += Resume;
+            LevelManager.OnEndLevel += EndLevel;
         }
 
         private void Pause()
@@ -70,7 +70,7 @@ namespace JumpMaster.Obstacles
 
         protected override void OnFixedUpdate()
         {
-            if (LevelController.Paused)
+            if (LevelManager.Paused)
                 return;
 
             if (_explodeCoroutine != null)
@@ -167,6 +167,7 @@ namespace JumpMaster.Obstacles
 
         private Vector3 GetWorldSpawnPosition(Vector3 screen_position, MissileDirection direction)
         {
+            // TODO: Offset by half of bounds.
             Vector3 position_world = c_camera.ScreenToWorldPoint(screen_position);
             switch (direction)
             {
@@ -201,7 +202,7 @@ namespace JumpMaster.Obstacles
 
         private void EndWarning()
         {
-            if (!LevelController.Started)
+            if (!LevelManager.Started)
                 return;
 
             transform.position = GetWorldSpawnPosition(SpawnArgs.ScreenPosition, SpawnArgs.Direction);
@@ -250,7 +251,7 @@ namespace JumpMaster.Obstacles
 
             OnExplode?.Invoke();
 
-            yield return new WaitForSeconds(Data.GameObjectDestroyDelayMS / 1000f);
+            yield return new WaitForSeconds(Data.ExplosionDestroyDelayMS / 1000f);
 
             Despawn();
         }

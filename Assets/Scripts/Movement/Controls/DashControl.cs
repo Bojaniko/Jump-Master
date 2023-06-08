@@ -1,5 +1,6 @@
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
 using JumpMaster.Controls;
+using JumpMaster.LevelTrackers;
 
 using UnityEngine;
 
@@ -7,9 +8,6 @@ namespace JumpMaster.Movement
 {
     public sealed class DashControl : MovementControl<DashControlDataSO, DashControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IDirectional, IChainable
     {
-        private readonly float _pixelWorld;
-
-        private float _chainPenaltyTime;
         private float _distancePercentage;
         private float _targetDistance;
 
@@ -31,23 +29,19 @@ namespace JumpMaster.Movement
 
         public DashControl(MovementController controller, DashControlDataSO data) : base(controller, data)
         {
-            if (SwipeDetector.Instance != null)
-                SwipeDetector.Instance.OnSwipeDetected += DashInput;
-
-            _pixelWorld = Vector2.Distance(Camera.main.ScreenToWorldPoint(Vector3.zero), Camera.main.ScreenToWorldPoint(Vector3.right * 100));
-
             _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero, 1f);
 
             _distancePercentage = 0f;
 
-            LevelController.OnRestart += Restart;
+            LevelManager.OnRestart += Restart;
+
+            InputController.Instance.RegisterInputPerformedListener<SwipeProcessor>(DashInput, this);
+            InputController.Instance.RegisterInputPerformedListener<DelayedSwipeProcessor>(DashInput, this);
         }
         public override MovementState ActiveState { get { return MovementState.DASHING; } }
 
         protected override void OnMovementUpdate()
         {
-            TryRestartChain();
-
             if (!Started)
                 return;
 
@@ -60,7 +54,7 @@ namespace JumpMaster.Movement
 
         protected override bool CanStartControl()
         {
-            if (!LevelController.Started)
+            if (!LevelManager.Started)
                 return false;
 
             if (Chain >= ControlData.MaxChain)
@@ -93,15 +87,12 @@ namespace JumpMaster.Movement
         }
 
         public override void Pause() { }
-        public override void Resume()
-        {
-            _chainPenaltyTime += LevelController.LastPauseDuration;
-        }
+        public override void Resume() { }
 
         private void Restart()
         {
             Chain = 0;
-            _chainPenaltyTime = 0f;
+            _chainPenaltyTimer = null;
             _distancePercentage = 0f;
         }
 
@@ -135,22 +126,21 @@ namespace JumpMaster.Movement
 
         public int Chain { get; private set; }
 
+        private TimeRecord _chainPenaltyTimer;
+
         private void PerformChain()
         {
             Chain++;
-            _chainPenaltyTime = Time.time;
-
             OnChain?.Invoke(Chain, ControlData.MaxChain);
+
+            if (_chainPenaltyTimer != null)
+                TimeTracker.Instance.CancelTimeTracking(_chainPenaltyTimer);
+            _chainPenaltyTimer = TimeTracker.Instance.StartTimeTracking(RestartChain, ControlData.ChainPenaltyDuration);
         }
 
-        private void TryRestartChain()
+        private void RestartChain()
         {
-            if (Chain == 0)
-                return;
-
-            if (Time.time - _chainPenaltyTime < ControlData.ChainPenaltyDuration)
-                return;
-
+            _chainPenaltyTimer = null;
             Chain = 0;
             OnChain?.Invoke(Chain, ControlData.MaxChain);
         }
@@ -168,8 +158,10 @@ namespace JumpMaster.Movement
 
         // ##### INPUT ##### \\
 
-        private void DashInput(Swipe swipe)
+        private void DashInput(IInputPerformedEventArgs args)
         {
+            Swipe swipe = ((SwipePerformedEventArgs)args).SwipeData;
+
             int dir = 0;
             if (swipe.Direction.Equals(SwipeDirection.LEFT)) dir = -1;
             if (swipe.Direction.Equals(SwipeDirection.RIGHT)) dir = 1;
@@ -184,9 +176,11 @@ namespace JumpMaster.Movement
                     return;
             }
 
-            float targetDistance = (swipe.DistanceScreen * _pixelWorld) / 100f;
+            if (swipe.Delayed && !Controller.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
+                return;
+
             MovementDirection directionMove = new(0, dir);
-            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove, targetDistance));
+            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove, ControlData.MaxDistance));
         }
     }
 }

@@ -1,4 +1,5 @@
-using JumpMaster.LevelControllers;
+using JumpMaster.Core;
+using JumpMaster.LevelTrackers;
 using JumpMaster.Controls;
 
 using UnityEngine;
@@ -7,7 +8,6 @@ namespace JumpMaster.Movement
 {
     public sealed class JumpControl : MovementControl<JumpControlDataSO, MovementControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IChainable
     {
-        private float _chainPenaltyTime;
         private float _heightPercentage;
 
         private Vector2 _topVelocity;
@@ -21,14 +21,11 @@ namespace JumpMaster.Movement
         public JumpControl(MovementController controller, JumpControlDataSO data) : base(controller, data)
         {
             Chain = 0;
-            _chainPenaltyTime = 0f;
 
-            Controller.OnActiveControlChange += OnChargedJump;
+            LevelManager.OnRestart += Restart;
 
-            LevelController.OnRestart += Restart;
-
-            if (InputController.Instance != null)
-                InputController.Instance.OnTap += JumpInput;
+            InputController.Instance.RegisterInputPerformedListener<TapProcessor>(JumpInput, this);
+            InputController.Instance.RegisterInputPerformedListener<DelayedSwipeProcessor>(JumpSwipeInput, this);
         }
         public MovementState TransitionState
         {
@@ -43,8 +40,6 @@ namespace JumpMaster.Movement
 
         protected override void OnMovementUpdate()
         {
-            TryRestartChain();
-
             if (!Started)
                 return;
 
@@ -79,8 +74,8 @@ namespace JumpMaster.Movement
 
             PerformChain();
 
-            if (!LevelController.Started)
-                LevelController.StartLevel();
+            if (!LevelManager.Started)
+                LevelManager.StartLevel();
         }
 
         public override bool CanExit(IMovementControl exit_control)
@@ -94,16 +89,13 @@ namespace JumpMaster.Movement
         }
         protected override void ExitControl() { }
 
-        public override void Resume()
-        {
-            _chainPenaltyTime += LevelController.LastPauseDuration;
-        }
+        public override void Resume() { }
         public override void Pause() { }
 
         private void Restart()
         {
             Chain = 0;
-            _chainPenaltyTime = 0f;
+            _chainPenaltyTimer = null;
             _heightPercentage = 0f;
         }
 
@@ -118,7 +110,7 @@ namespace JumpMaster.Movement
         {
             Vector2 velocity = Vector2.up * ControlData.Force;
 
-            if (previous_primary_control is IPrimaryControl)
+            if (previous_primary_control is IPrimaryControl && !Controller.PreviousControl.ActiveState.Equals(MovementState.FLOATING))
             {
                 var directionalControl = previous_primary_control as IDirectional;
                 if (directionalControl != null)
@@ -133,35 +125,34 @@ namespace JumpMaster.Movement
         private void PerformChain()
         {
             Chain++;
-            _chainPenaltyTime = Time.time;
-
             OnChain?.Invoke(Chain, ControlData.MaxChain);
+
+            if (_chainPenaltyTimer != null)
+                TimeTracker.Instance.CancelTimeTracking(_chainPenaltyTimer);
+            _chainPenaltyTimer = TimeTracker.Instance.StartTimeTracking(RestartChain, ControlData.ChainPenaltyDuration);
         }
 
-        private void TryRestartChain()
+        private TimeRecord _chainPenaltyTimer;
+        private void RestartChain()
         {
-            if (Chain == 0)
-                return;
-
-            if (Time.time - _chainPenaltyTime < ControlData.ChainPenaltyDuration)
-                return;
-
+            _chainPenaltyTimer = null;
             Chain = 0;
             OnChain?.Invoke(Chain, ControlData.MaxChain);
         }
 
         // ##### INPUT ##### \\
 
-        private void JumpInput()
-        {
+        private void JumpInput(IInputPerformedEventArgs args) =>
             OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
-        }
 
-        private void OnChargedJump(IMovementControl control)
+        private void JumpSwipeInput(IInputPerformedEventArgs args)
         {
-            if (!control.ActiveState.Equals(MovementState.JUMP_CHARGING))
+            SwipePerformedEventArgs swipeArgs = (SwipePerformedEventArgs)args;
+            if (!Controller.ActiveControl.ActiveState.Equals(MovementState.LEVITATING))
                 return;
-            PerformChain();
+            if (!swipeArgs.SwipeData.Direction.Equals(SwipeDirection.UP))
+                return;
+            OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
         }
     }
 }

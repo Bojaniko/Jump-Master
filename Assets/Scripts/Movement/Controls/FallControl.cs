@@ -1,5 +1,4 @@
-using JumpMaster.LevelControllers;
-using JumpMaster.Controls;
+using JumpMaster.Core;
 
 using UnityEngine;
 
@@ -13,14 +12,13 @@ namespace JumpMaster.Movement
 
         public FallControl(MovementController controller, FallControlDataSO data) : base(controller, data)
         {
-            InputController.Instance.OnHoldCancelled += JumpChargeCancelInput;
         }
 
         public override MovementState ActiveState { get { return MovementState.FALLING; } }
 
         public override bool CanExit(IMovementControl exit_control) => true;
         protected override void ExitControl() { _drag = 0f; }
-        protected override bool CanStartControl() => LevelController.Started;
+        protected override bool CanStartControl() => LevelManager.Started;
 
         protected override void StartControl()
         {
@@ -99,7 +97,7 @@ namespace JumpMaster.Movement
         }
 
         // ##### INPUT ##### \\
-
+        
         private void JumpChargeCancelInput()
         {
             if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
