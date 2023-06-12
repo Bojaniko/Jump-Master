@@ -1,0 +1,20 @@
+{
+    "name": "JumpMaster.Testing",
+    "rootNamespace": "JumpMaster.Testing",
+    "references": [
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:3ae9e763be00d874381d9750a832ff88",
+        "GUID:642c143c32d75e04fbbc56a90c3665ad"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

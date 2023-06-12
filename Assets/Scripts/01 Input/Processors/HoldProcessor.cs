@@ -7,6 +7,12 @@ using JumpMaster.LevelTrackers;
 
 namespace JumpMaster.Controls
 {
+    /// <summary>
+    /// This screen hold touch control. <br/><br/>
+    /// * Started when the screen is touched for a minimum time treshold. <br/><br/>
+    /// * Performed when the screen is not touched anymore<br/> and the hold processor was started. <br/><br/>
+    /// * Canceled when the touch was released <br/> before the minimum hold time has passed.
+    /// </summary>
     public class HoldProcessor : IInputProcessor
     {
         public event InputPerformedEventHandler OnInputPerformed;
@@ -50,16 +56,20 @@ namespace JumpMaster.Controls
 
         public void StartInputProcess()
         {
-            _startTime = Time.time;
             _startPosition = _positionAction.ReadValue<Vector2>();
             _holdTimer = TimeTracker.Instance.StartTimeTracking(HoldTimerEnded, _data.MinDuration);
             _stateController.SetState(InputProcessState.STARTED);
         }
-        private void HoldTimerEnded() =>
-            OnInputPerformed?.Invoke(this, new InputPerformedEventArgs(_startTime, Time.time));
+        private void HoldTimerEnded()
+        {
+            _startTime = Time.time;
+            _stateController.SetState(InputProcessState.STARTED);
+        }
 
         public void StopInputProcess()
         {
+            if (CurrentState.Equals(InputProcessState.STARTED))
+                OnInputPerformed?.Invoke(this, new InputPerformedEventArgs(_startTime, Time.time));
             CancelHoldTimer();
             _stateController.SetState(InputProcessState.WAITING);
         }

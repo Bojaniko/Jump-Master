@@ -31,38 +31,50 @@ namespace JumpMaster.LevelTrackers
         {
             s_instance = this;
 
-            _activeRecords = new();
+            _records = new();
             LevelManager.OnResume += Resume;
             LevelManager.OnRestart += Restart;
         }
         private void Restart()
         {
-            _activeRecords.Clear();
+            _records.Clear();
         }
         private void Resume()
         {
-            if (_activeRecords.Count == 0)
+            if (_records.Count == 0)
                 return;
-            foreach (TimeRecord record in _activeRecords)
+            foreach (TimeRecord record in _records)
                 record.ProlongTime(LevelManager.LastPauseDuration);
         }
         private void Update()
         {
             if (LevelManager.Paused || LevelManager.Ended || !LevelManager.Started)
                 return;
-            if (_activeRecords.Count == 0)
+            if (_records.Count == 0)
                 return;
-            for (int r = 0; r < _activeRecords.Count; r++)
+            ProcessRecords();
+        }
+
+        private void ProcessRecords()
+        {
+            for (int r = 0; r < _records.Count; r++)
             {
-                if (Time.time - _activeRecords[r].StartTime > _activeRecords[r].Duration)
+                if (_records.Peek().Invoked)
                 {
-                    _activeRecords[r].Callback.Invoke();
-                    _activeRecords.Remove(_activeRecords[r]);
+                    _records.Dequeue();
+                    continue;
                 }
+                if (Time.time - _records.Peek().StartTime > _records.Peek().Duration)
+                {
+                    _records.Peek().InvokeCallback();
+                    _records.Dequeue();
+                    continue;
+                }
+                _records.Enqueue(_records.Dequeue());
             }
         }
 
-        private List<TimeRecord> _activeRecords;
+        private Queue<TimeRecord> _records;
         public TimeRecord StartTimeTracking(TimeRecordCallback callback, float duration, float start_time)
         {
             TimeRecord record = new(callback, duration);
@@ -79,12 +91,9 @@ namespace JumpMaster.LevelTrackers
         {
             if (Time.time - record.StartTime > record.Duration)
                 return;
-            _activeRecords.Add(record);
+            _records.Enqueue(record);
         }
-        public void CancelTimeTracking(TimeRecord record)
-        {
-            if (_activeRecords.Contains(record))
-                _activeRecords.Remove(record);
-        }
+        public void CancelTimeTracking(TimeRecord record) =>
+            record.CancelCallback();
     }
 }

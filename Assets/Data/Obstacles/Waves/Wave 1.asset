@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 734c825a928c79a4bb7a48b2b7613a80, type: 3}
   m_Name: Wave 1
   m_EditorClassIdentifier: 
-  TypeOfWave: 0
-  ControllersData: {fileID: 11400000, guid: 389ed9481fde1c14dbbbcd25632ec649, type: 2}
+  _typeOfWave: 0
+  _controllersData: {fileID: 11400000, guid: 389ed9481fde1c14dbbbcd25632ec649, type: 2}

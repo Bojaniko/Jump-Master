@@ -1,0 +1,21 @@
+{
+    "name": "JumpMaster.Editors",
+    "rootNamespace": "JumpMaster.Editors",
+    "references": [
+        "GUID:3ae9e763be00d874381d9750a832ff88",
+        "GUID:cd97736a3e47e5745b06c5ca15ed7169",
+        "GUID:642c143c32d75e04fbbc56a90c3665ad",
+        "GUID:859fd48c4cd296c4f9d49929b387c0e9"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

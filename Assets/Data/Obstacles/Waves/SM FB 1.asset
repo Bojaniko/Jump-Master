@@ -16,8 +16,8 @@ MonoBehaviour:
   _spawnAmount: 4
   _maxActiveObstacles: 3
   _spawnPointCooldown: 1
-  Data: {fileID: 11400000, guid: 76ea0619514ecf74e95cb7658bbe5403, type: 2}
-  SpawnData:
+  _data: {fileID: 11400000, guid: 76ea0619514ecf74e95cb7658bbe5403, type: 2}
+  _spawnData:
   - {fileID: 11400000, guid: b5ffa807753ccfa4c872b8161f88c883, type: 2}
   _spawnChance: 30
   _interval: 10

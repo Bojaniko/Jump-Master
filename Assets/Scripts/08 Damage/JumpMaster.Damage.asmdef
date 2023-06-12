@@ -1,0 +1,17 @@
+{
+    "name": "JumpMaster.Damage",
+    "rootNamespace": "JumpMaster.Damage",
+    "references": [
+        "GUID:fb96ca16922018046a9afe18cd20441a",
+        "GUID:4bfabcd1e4caeee4699a93126ae5ee70"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
