@@ -7,21 +7,38 @@ namespace JumpMaster.Movement
     public class JumpControlDataSO : MovementControlDataSO
     {
         [Header("Jump")]
-        [Range(0.5f, 10f)]
-        public float Height = 6f;
-        [Range(2f, 50f)]
-        public float Force = 20f;
+        [SerializeField, Range(0.5f, 10f)] private float _height = 5f;
+        public float Height => _height;
 
-        public AnimationCurve VelocityFalloff;
+        public float Force => _force;
+        [SerializeField, Range(2f, 50f)] private float _force = 20f;
+
+        public AnimationCurve VelocityFalloff => _velocityFallof;
+        [SerializeField] private AnimationCurve _velocityFallof;
 
         [Header("Chain")]
-        [Range(1, 50)]
-        public int MaxChain = 3;
-        [Range(0.1f, 1f)]
-        public float MinChainHeight = 0.5f;
-        [Range(0.5f, 10f)]
-        public float ChainPenaltyDuration = 1.5f;
-        [Range(0f, 20f)]
-        public float CrossChainHorizontalForce = 10f;
+        [SerializeField, Range(1, 50)] private int _maxChain = 10;
+        public int MaxChain => _maxChain;
+
+        /// <summary>
+        /// The minimum jump distance percentage for chaining a jump.
+        /// </summary>
+        public float MinChainHeight => _minChainHeight;
+        [SerializeField, Range(0.1f, 1f), Tooltip("The minimum jump distance percentage for chaining a jump.")]
+        private float _minChainHeight = 0.75f;
+
+        /// <summary>
+        /// The cooldown duration after chaining a jump.
+        /// </summary>
+        public float ChainPenaltyDuration => _chainPenaltyDuration;
+        [SerializeField, Range(0.5f, 10f), Tooltip("The cooldown duration after chaining a jump.")]
+        private float _chainPenaltyDuration = 2.5f;
+
+        /// <summary>
+        /// The horizontal force applied if the jump is chained from a horizontal based control.
+        /// </summary>
+        public float CrossChainHorizontalForce => _crossChainHorizontalForce;
+        [SerializeField, Range(0f, 20f), Tooltip("The horizontal force applied if the jump is chained from a horizontal based control.")]
+        private float _crossChainHorizontalForce = 10f;
     }
 }

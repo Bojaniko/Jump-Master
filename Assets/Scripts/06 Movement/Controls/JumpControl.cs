@@ -9,6 +9,7 @@ namespace JumpMaster.Movement
     public sealed class JumpControl : MovementControl<JumpControlDataSO, MovementControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IChainable
     {
         private float _heightPercentage;
+        private const float _transitionHeightPercentage = 0.9f;
 
         private Vector2 _topVelocity;
 
@@ -31,7 +32,8 @@ namespace JumpMaster.Movement
         {
             get
             {
-                if (_topVelocity.x != 0f)
+                bool hasHorizontalVelocity = (_topVelocity.x != 0f);
+                if (hasHorizontalVelocity)
                     return MovementState.FALLING;
                 return MovementState.FLOATING;
             }
@@ -45,15 +47,20 @@ namespace JumpMaster.Movement
 
             _heightPercentage = (Controller.transform.position.y - ControlArgs.StartPosition.y) / ControlData.Height;
 
-            if (Mathf.Abs(Controller.ControlledRigidbody.velocity.y) > 0.5f)
+            //if (Mathf.Abs(Controller.ControlledRigidbody.velocity.y) > 0.5f)
+            //    return;
+
+            bool transitionHeightReached = (_heightPercentage >= _transitionHeightPercentage);
+
+            if (!transitionHeightReached)
                 return;
 
             MovementControlArgs start_args = new(Controller);
 
             if (TransitionState.Equals(MovementState.FLOATING))
-                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new FloatControlArgs(start_args, MovementDirection.Up));
+                OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), new FloatControlArgs(start_args, MovementDirection.Up));
             else
-                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), start_args); // FALLING
+                OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), start_args); // FALLING
         }
 
         // ##### CONTROL ##### \\
@@ -110,7 +117,9 @@ namespace JumpMaster.Movement
         {
             Vector2 velocity = Vector2.up * ControlData.Force;
 
-            if (previous_primary_control is IPrimaryControl && !Controller.PreviousControl.ActiveState.Equals(MovementState.FLOATING))
+            if (previous_primary_control is IPrimaryControl &&
+                !Controller.PreviousControl.ActiveState.Equals(MovementState.FLOATING) &&
+                !previous_primary_control.ActiveState.Equals(MovementState.LEVITATING))
             {
                 var directionalControl = previous_primary_control as IDirectional;
                 if (directionalControl != null)
@@ -148,7 +157,7 @@ namespace JumpMaster.Movement
         private void JumpSwipeInput(IInputPerformedEventArgs args)
         {
             SwipePerformedEventArgs swipeArgs = (SwipePerformedEventArgs)args;
-            if (!Controller.ActiveControl.ActiveState.Equals(MovementState.LEVITATING))
+            if (!Controller.PreviousPrimaryControl.ActiveState.Equals(MovementState.LEVITATING))
                 return;
             if (!swipeArgs.SwipeData.Direction.Equals(SwipeDirection.UP))
                 return;

@@ -57,7 +57,7 @@ namespace JumpMaster.Movement
         private void Transition()
         {
             _transitionTimer = null;
-            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller));
+            OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), new(Controller));
         }
     }
 }

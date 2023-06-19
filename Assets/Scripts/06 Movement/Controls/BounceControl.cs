@@ -71,9 +71,9 @@ namespace JumpMaster.Movement
 
             MovementControlArgs start_args = new(Controller, 0.5f);
             if (TransitionState.Equals(MovementState.FLOATING))
-                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new FloatControlArgs(start_args, MovementDirection.Up));
+                OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), new FloatControlArgs(start_args, MovementDirection.Up));
             else
-                OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), start_args); // FALLING
+                OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), start_args); // FALLING
         }
 
         // ##### INPUT ##### \\

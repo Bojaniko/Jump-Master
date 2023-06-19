@@ -62,6 +62,11 @@ namespace JumpMaster.Controls
         }
         private void HoldTimerEnded()
         {
+            if (_startPosition != _positionAction.ReadValue<Vector2>())
+            {
+                CancelInputProcess();
+                return;
+            }
             _startTime = Time.time;
             _stateController.SetState(InputProcessState.STARTED);
         }
@@ -74,10 +79,6 @@ namespace JumpMaster.Controls
             _stateController.SetState(InputProcessState.WAITING);
         }
 
-        public void UpdateInputProcess()
-        {
-            if (_startPosition != _positionAction.ReadValue<Vector2>())
-                CancelInputProcess();
-        }
+        public void UpdateInputProcess() { }
     }
 }

@@ -8,8 +8,9 @@ namespace JumpMaster.Movement
 {
     public sealed class DashControl : MovementControl<DashControlDataSO, DashControlArgs>, IPrimaryControl, ITransitionable, IInputableControl, IDirectional, IChainable
     {
+        private const float _transitionDistancePercentage = 0.9f;
+        
         private float _distancePercentage;
-        private float _targetDistance;
 
         private Vector2 _topVelocity;
 
@@ -29,25 +30,29 @@ namespace JumpMaster.Movement
 
         public DashControl(MovementController controller, DashControlDataSO data) : base(controller, data)
         {
-            _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero, 1f);
+            _controlArgs = new DashControlArgs(new(controller), MovementDirection.Zero);
 
             _distancePercentage = 0f;
 
             LevelManager.OnRestart += Restart;
 
             InputController.Instance.RegisterInputPerformedListener<SwipeProcessor>(DashInput, this);
-            InputController.Instance.RegisterInputPerformedListener<DelayedSwipeProcessor>(DashInput, this);
+            InputController.Instance.RegisterInputPerformedListener<DelayedSwipeProcessor>(DelayedDashInput, this);
         }
         public override MovementState ActiveState { get { return MovementState.DASHING; } }
+        public MovementState TransitionState => MovementState.FALLING;
 
         protected override void OnMovementUpdate()
         {
             if (!Started)
                 return;
 
-            _distancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / _targetDistance;//ControlData.Distance;
+            _distancePercentage = Mathf.Abs(ControlArgs.StartPosition.x - Controller.transform.position.x) / ControlData.MaxDistance;//ControlData.Distance;
 
-            TryTransition();
+            bool transitionableDistanceReached = (_distancePercentage >= _transitionDistancePercentage);
+            if (!transitionableDistanceReached)
+                return;
+            OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
         }
 
         // ##### CONTROL INSTRUCTIONS ##### \\
@@ -67,8 +72,6 @@ namespace JumpMaster.Movement
             Controller.ControlledRigidbody.gravityScale = 0f;
 
             _distancePercentage = 0f;
-
-            _targetDistance = Mathf.Clamp(_controlArgs.TargetDistance, ControlData.MinDistance, ControlData.MaxDistance);
 
             _topVelocity = GetTopVelocity(Controller.PreviousControl.ActiveState, _controlArgs.Direction.Horizontal);
 
@@ -103,7 +106,7 @@ namespace JumpMaster.Movement
             float horizontalVelocity = Mathf.Lerp(_topVelocity.x, 0, 1f - ControlData.HorizontalVelocityFalloff.Evaluate(_distancePercentage));
             float verticalVelocity = 0;
 
-            if (Controller.ControlledRigidbody.transform.position.y - _controlArgs.StartPosition.y < ControlData.MaxCrossChainVerticalDistance)
+            //if (Controller.ControlledRigidbody.transform.position.y - _controlArgs.StartPosition.y < ControlData.MaxCrossChainVerticalDistance)
                 verticalVelocity = Mathf.Lerp(_topVelocity.y, Physics2D.gravity.y, ControlData.GravityFalloff.Evaluate(_distancePercentage));
 
             return new(horizontalVelocity, verticalVelocity);
@@ -119,6 +122,7 @@ namespace JumpMaster.Movement
             {
                 velocity += Vector2.up * ControlData.CrossChainVerticalForce;
             }
+            else velocity += Vector2.up * ControlData.VerticalForce;
             return velocity;
         }
 
@@ -145,17 +149,6 @@ namespace JumpMaster.Movement
             OnChain?.Invoke(Chain, ControlData.MaxChain);
         }
 
-        // ##### TRANSITION ##### \\
-
-        public MovementState TransitionState => MovementState.FALLING;
-        private void TryTransition()
-        {
-            if (_distancePercentage < ControlData.TransitionDistancePercentage)
-                return;
-
-            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller)); // FALLING
-        }
-
         // ##### INPUT ##### \\
 
         private void DashInput(IInputPerformedEventArgs args)
@@ -176,11 +169,26 @@ namespace JumpMaster.Movement
                     return;
             }
 
-            if (swipe.Delayed && !Controller.ActiveControl.ActiveState.Equals(MovementState.FLOATING))
+            MovementDirection directionMove = new(0, dir);
+            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove));
+        }
+
+        private void DelayedDashInput(IInputPerformedEventArgs args)
+        {
+            Swipe swipe = ((SwipePerformedEventArgs)args).SwipeData;
+
+            int dir = 0;
+            if (swipe.Direction.Equals(SwipeDirection.LEFT)) dir = -1;
+            if (swipe.Direction.Equals(SwipeDirection.RIGHT)) dir = 1;
+
+            if (dir == 0)
+                return;
+
+            if (!Controller.PreviousPrimaryControl.ActiveState.Equals(MovementState.LEVITATING))
                 return;
 
             MovementDirection directionMove = new(0, dir);
-            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove, ControlData.MaxDistance));
+            OnInputDetected?.Invoke(this, new DashControlArgs(new(Controller), directionMove));
         }
     }
 }

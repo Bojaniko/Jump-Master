@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bf9e0f56020dde4a9fe610c747a42e1, type: 3}
   m_Name: Jump Control Data
   m_EditorClassIdentifier: 
-  Height: 5
-  Force: 20
-  VelocityFalloff:
+  _height: 5
+  _force: 20
+  _velocityFallof:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -65,7 +65,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  MaxChain: 10
-  MinChainHeight: 0.75
-  ChainPenaltyDuration: 2.5
-  CrossChainHorizontalForce: 10
+  _maxChain: 10
+  _minChainHeight: 0.75
+  _chainPenaltyDuration: 2.5
+  _crossChainHorizontalForce: 10

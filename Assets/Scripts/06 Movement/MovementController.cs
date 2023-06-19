@@ -130,6 +130,13 @@ namespace JumpMaster.Movement
             StartControl(control, start_args);
         }
 
+        private void TransitionControl(IMovementControl sender_control, IMovementControl transition_control, MovementControlArgs start_args)
+        {
+            if (!ActiveControl.ActiveState.Equals(sender_control.ActiveState))
+                return;
+            ForceStartControl(transition_control, start_args);
+        }
+
         private void ForceStartControl(IMovementControl control, MovementControlArgs start_args)
         {
             if (LevelManager.Paused)
@@ -192,40 +199,43 @@ namespace JumpMaster.Movement
 
         private void RegisterControls()
         {
-            GetControlTypes();
+            System.Type[] controlTypes = GetControlTypes();
 
-            GenerateControls();
+            _controls = new();
+            _controls.AddRange(GenerateControls(controlTypes));
 
-            RegisterContracts();
+            RegisterContracts(_controls.ToArray());
         }
 
-        private void RegisterContracts()
+        private void RegisterContracts(IMovementControl[] controls)
         {
-            foreach (IMovementControl control in _controls)
+            foreach (IMovementControl control in controls)
             {
                 if (control is IExplicitControl explicit_control)
                     explicit_control.OnExplicitDetection += ForceStartControl;
                 if (control is ITransitionable transitionable)
-                    transitionable.OnTransitionable += ForceStartControl;
+                    transitionable.OnTransitionable += TransitionControl;
                 if (control is IInputableControl inputable)
                     inputable.OnInputDetected += TryStartControl;
             }
         }
 
-        private void GenerateControls()
+        private IMovementControl[] GenerateControls(System.Type[] types)
         {
-            _controls = new();
-            foreach (System.Type tControl in _controlTypes)
+            IMovementControl[] controls = new IMovementControl[types.Length];
+            int ctr = 0;
+            foreach (System.Type tControl in types)
             {
                 IMovementControl control = (IMovementControl)System.Activator.CreateInstance(tControl, this, _data.GetControlDataForControlType(tControl));
-                _controls.Add(control);
+                controls[ctr] = control;
+                ctr++;
             }
+            return controls;
         }
 
-        private List<System.Type> _controlTypes;
-        private void GetControlTypes()
+        private System.Type[] GetControlTypes()
         {
-            _controlTypes = new();
+            List<System.Type> _controlTypes = new();
             foreach (Assembly asm in System.AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (asm.GetName().Name.Equals("JumpMaster.Movement"))
@@ -235,9 +245,10 @@ namespace JumpMaster.Movement
                         if (t.GetInterface("IMovementControl") != null && !t.IsAbstract)
                             _controlTypes.Add(t);
                     }
-                    return;
+                    return _controlTypes.ToArray();
                 }
             }
+            return new System.Type[0];
         }
 
         // ##### POSITION ##### \\

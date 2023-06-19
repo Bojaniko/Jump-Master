@@ -6,7 +6,7 @@ using JumpMaster.Controls;
 
 namespace JumpMaster.Movement
 {
-    public class LevitationControl : MovementControl<LevitationControlDataSO, MovementControlArgs>, IInputableControl, ITransitionable
+    public class LevitationControl : MovementControl<LevitationControlDataSO, MovementControlArgs>, IInputableControl, ITransitionable, IPrimaryControl
     {
         public LevitationControl(MovementController controller, LevitationControlDataSO data) : base(controller, data)
         {
@@ -44,8 +44,15 @@ namespace JumpMaster.Movement
         }
 
         public override bool CanExit(IMovementControl exit_control) => true;
-        protected override void ExitControl() =>
+        protected override void ExitControl()
+        {
+            if (_transitionTimer != null)
+            {
+                TimeTracker.Instance.CancelTimeTracking(_transitionTimer);
+                _transitionTimer = null;
+            }
             TimeTracker.Instance.StartTimeTracking(EndCooldown, ControlData.Cooldown);
+        }
 
         public override void Pause() { }
         public override void Resume() { }
@@ -56,23 +63,25 @@ namespace JumpMaster.Movement
 
         // ##### TRANSITION ##### \\
 
-        // TODO: Fix input processing
-
         public MovementState TransitionState => MovementState.FALLING;
         private TimeRecord _transitionTimer;
-
         private void Transition() =>
-            OnTransitionable?.Invoke(Controller.GetControlByState(TransitionState), new(Controller));
+            OnTransitionable?.Invoke(this, Controller.GetControlByState(TransitionState), new(Controller));
 
         // ##### INPUT ##### \\
 
         private void HoldInput(InputProcessState state, InputProcessorDataSO processor_data)
         {
+            if (state.Equals(InputProcessState.STARTED))
+            {
+                OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
+                return;
+            }
             if (state.Equals(InputProcessState.CANCELED))
                 Transition();
         }
 
         private void LevitationInput(IInputPerformedEventArgs args) =>
-            OnInputDetected?.Invoke(this, new MovementControlArgs(Controller));
+            Transition();
     }
 }

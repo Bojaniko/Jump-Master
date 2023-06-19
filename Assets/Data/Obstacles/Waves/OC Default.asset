@@ -12,9 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fc73eb645b53ae45b3d0ee17212e846, type: 3}
   m_Name: OC Default
   m_EditorClassIdentifier: 
-  PopupSelection: 2
-  SelectedSpawnMetrics: {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}
-  SpawnMetricsData:
+  _spawnMetricsData:
   - {fileID: 11400000, guid: cb8960f3b7f5d0f4aaaf1e4b8dda1471, type: 2}
   - {fileID: 11400000, guid: fa68de5124c78734f940d22204017708, type: 2}
   - {fileID: 11400000, guid: a09e7e533a76ba74085705688c0c878c, type: 2}
