@@ -33,6 +33,8 @@ namespace JumpMaster.Movement
                 return false;
             if (Controller.ActiveControl.ActiveState.Equals(MovementState.HANGING))
                 return false;
+            if (Controller.ActiveControl.ActiveState.Equals(MovementState.STILL))
+                return false;
             return (_cooldownEnded);
         }
         protected override void StartControl()

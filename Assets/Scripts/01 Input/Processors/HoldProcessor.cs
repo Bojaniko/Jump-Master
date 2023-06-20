@@ -58,7 +58,6 @@ namespace JumpMaster.Controls
         {
             _startPosition = _positionAction.ReadValue<Vector2>();
             _holdTimer = TimeTracker.Instance.StartTimeTracking(HoldTimerEnded, _data.MinDuration);
-            _stateController.SetState(InputProcessState.STARTED);
         }
         private void HoldTimerEnded()
         {

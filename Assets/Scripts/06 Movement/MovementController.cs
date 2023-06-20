@@ -132,7 +132,8 @@ namespace JumpMaster.Movement
 
         private void TransitionControl(IMovementControl sender_control, IMovementControl transition_control, MovementControlArgs start_args)
         {
-            if (!ActiveControl.ActiveState.Equals(sender_control.ActiveState))
+            bool senderControlIsCurrentActive = ActiveControl.ActiveState.Equals(sender_control.ActiveState);
+            if (!senderControlIsCurrentActive)
                 return;
             ForceStartControl(transition_control, start_args);
         }

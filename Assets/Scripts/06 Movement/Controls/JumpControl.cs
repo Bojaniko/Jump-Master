@@ -117,7 +117,7 @@ namespace JumpMaster.Movement
         {
             Vector2 velocity = Vector2.up * ControlData.Force;
 
-            if (previous_primary_control is IPrimaryControl &&
+            if (previous_primary_control != null &&
                 !Controller.PreviousControl.ActiveState.Equals(MovementState.FLOATING) &&
                 !previous_primary_control.ActiveState.Equals(MovementState.LEVITATING))
             {
